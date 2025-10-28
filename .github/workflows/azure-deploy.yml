@@ -13,7 +13,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      AZURE_WEBAPP_NAME: ASP-Firstaiprojectgroup-b31b
+      AZURE_WEBAPP_NAME: Firstaiprojectgroup
 
     steps:
       - name: Checkout repository
