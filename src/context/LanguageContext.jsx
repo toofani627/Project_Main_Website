@@ -138,6 +138,17 @@ const translations = {
 export const LanguageProvider = ({ children }) => {
   // Check localStorage for saved language preference, default to null to show language selection
   const [language, setLanguage] = useState(() => {
+    // Version check - force language selection for new deployment
+    const APP_VERSION = '2.0'; // Increment this to force language reselection
+    const savedVersion = localStorage.getItem('appVersion');
+    
+    // If version doesn't match, clear language and force reselection
+    if (savedVersion !== APP_VERSION) {
+      localStorage.removeItem('language');
+      localStorage.setItem('appVersion', APP_VERSION);
+      return null;
+    }
+    
     const savedLanguage = localStorage.getItem('language');
     // Only return saved language if it's valid ('en' or 'hi'), otherwise return null
     return (savedLanguage === 'en' || savedLanguage === 'hi') ? savedLanguage : null;
