@@ -52,9 +52,12 @@ const AIAnalysis = () => {
    * - Works from anywhere (no local IP issues!)
    * - Only reads sensors when needed (saves power)
    * - Real-time bidirectional communication
+   * 
+   * Note: Uses device ID (ESP1) instead of IP address for WebSocket connection
    */
   const fetchDeviceData = async () => {
-    const deviceId = deviceIP || 'ESP1';
+    // Always use device ID 'ESP1' for WebSocket-based communication
+    const deviceId = 'ESP1';
 
     setLoading(true);
     setStatusMessage('⏳ Requesting data from device...');
