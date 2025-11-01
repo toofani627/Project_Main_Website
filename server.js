@@ -2,6 +2,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
 import dotenv from "dotenv";
+import { WebSocketServer } from "ws";
+import http from "http";
 
 dotenv.config();
 
@@ -10,6 +12,83 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Create WebSocket server
+const wss = new WebSocketServer({ server });
+
+// Store connected devices: Map<deviceId, {ws, data, lastUpdate}>
+const connectedDevices = new Map();
+
+// WebSocket connection handler
+wss.on('connection', (ws, req) => {
+  console.log('📱 New WebSocket connection established');
+  let deviceId = null;
+
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      
+      // Handle device identification
+      if (data.type === 'DEVICE_CONNECT') {
+        deviceId = data.deviceId || data.device || 'ESP1';
+        connectedDevices.set(deviceId, {
+          ws: ws,
+          data: null,
+          lastUpdate: Date.now(),
+          connected: true
+        });
+        console.log(`✅ Device registered: ${deviceId}`);
+        ws.send(JSON.stringify({ type: 'CONNECTED', deviceId }));
+        return;
+      }
+      
+      // Handle sensor data
+      if (data.type === 'SENSOR_DATA' || data.device || data.temperature !== undefined) {
+        deviceId = data.deviceId || data.device || deviceId || 'ESP1';
+        const deviceInfo = connectedDevices.get(deviceId);
+        
+        if (deviceInfo) {
+          deviceInfo.data = data;
+          deviceInfo.lastUpdate = Date.now();
+          console.log(`📊 Data received from ${deviceId}:`, {
+            temp: data.temperature,
+            humidity: data.humidity,
+            soil: data.soilMoisture
+          });
+        } else {
+          // Auto-register device
+          connectedDevices.set(deviceId, {
+            ws: ws,
+            data: data,
+            lastUpdate: Date.now(),
+            connected: true
+          });
+          console.log(`✅ Device auto-registered: ${deviceId}`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error parsing WebSocket message:', error);
+    }
+  });
+
+  ws.on('close', () => {
+    if (deviceId) {
+      const device = connectedDevices.get(deviceId);
+      if (device) {
+        device.connected = false;
+      }
+      console.log(`📴 Device disconnected: ${deviceId}`);
+    }
+  });
+
+  ws.on('error', (error) => {
+    console.error('❌ WebSocket error:', error);
+  });
+});
 
 // Middleware to parse JSON
 app.use(express.json());
@@ -20,6 +99,106 @@ app.use(express.static(path.join(__dirname, "dist")));
 // API routes can be added here
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from your Azure-backed Node API!" });
+});
+
+/**
+ * WebSocket-based device data endpoint
+ * Get latest data from connected device via WebSocket
+ */
+app.get("/api/device-data-ws", (req, res) => {
+  const deviceId = req.query.device || req.query.id || 'ESP1';
+  const device = connectedDevices.get(deviceId);
+  
+  if (!device) {
+    return res.status(404).json({ 
+      error: "Device not connected",
+      deviceId: deviceId,
+      availableDevices: Array.from(connectedDevices.keys())
+    });
+  }
+  
+  if (!device.connected) {
+    return res.status(503).json({ 
+      error: "Device is offline",
+      deviceId: deviceId,
+      lastSeen: new Date(device.lastUpdate).toISOString()
+    });
+  }
+  
+  if (!device.data) {
+    return res.status(404).json({ 
+      error: "No data available yet. Device connected but hasn't sent data.",
+      deviceId: deviceId
+    });
+  }
+  
+  res.json(device.data);
+});
+
+/**
+ * Request sensor data from device
+ * Sends command to ESP8266 to read sensors and send back data
+ */
+app.post("/api/request-data", (req, res) => {
+  const deviceId = req.query.device || req.body.device || 'ESP1';
+  const device = connectedDevices.get(deviceId);
+  
+  if (!device) {
+    return res.status(404).json({ 
+      error: "Device not connected",
+      deviceId: deviceId
+    });
+  }
+  
+  if (!device.connected || !device.ws) {
+    return res.status(503).json({ 
+      error: "Device is offline",
+      deviceId: deviceId
+    });
+  }
+  
+  try {
+    // Send command to ESP8266 to read sensors
+    device.ws.send(JSON.stringify({
+      type: 'READ_SENSORS',
+      timestamp: Date.now()
+    }));
+    
+    console.log(`📤 Sent READ_SENSORS command to ${deviceId}`);
+    
+    res.json({ 
+      success: true,
+      message: "Data request sent to device",
+      deviceId: deviceId
+    });
+  } catch (error) {
+    console.error('Error sending command to device:', error);
+    res.status(500).json({ 
+      error: "Failed to send command to device",
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Get list of connected devices
+ */
+app.get("/api/devices", (req, res) => {
+  const devices = [];
+  
+  connectedDevices.forEach((device, deviceId) => {
+    devices.push({
+      deviceId: deviceId,
+      connected: device.connected,
+      lastUpdate: device.lastUpdate,
+      hasData: device.data !== null
+    });
+  });
+  
+  res.json({ 
+    count: devices.length,
+    devices: devices
+  });
 });
 
 /**
@@ -113,6 +292,8 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// Start server with WebSocket support
+server.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
+  console.log(`📡 WebSocket server ready for device connections`);
 });

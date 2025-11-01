@@ -39,69 +39,59 @@ const AIAnalysis = () => {
   const [loading, setLoading] = useState(false);
 
   /**
-   * Fetch real sensor data from ESP8266
+   * Fetch sensor data from ESP8266 via WebSocket
    * 
-   * Development (localhost): Direct HTTP fetch to device
-   * Production (HTTPS): Uses proxy to avoid Mixed Content blocking
+   * NEW FLOW (On-Demand):
+   * 1. User clicks "Get Data"
+   * 2. Frontend → POST /api/request-data → Azure Server
+   * 3. Azure Server → WebSocket → "READ_SENSORS" command → ESP8266
+   * 4. ESP8266 reads sensors → WebSocket → Sends data → Azure Server
+   * 5. Frontend → GET /api/device-data-ws → Gets latest data → Display
    * 
-   * Proxy: https://azure.../api/device-data?ip=192.168.1.100
-   * Direct: http://192.168.1.100/data
+   * Benefits:
+   * - Works from anywhere (no local IP issues!)
+   * - Only reads sensors when needed (saves power)
+   * - Real-time bidirectional communication
    */
   const fetchDeviceData = async () => {
-    if (!deviceIP) {
-      setStatusMessage('❌ No device connected. Please enter device IP first.');
-      setTimeout(() => setStatusMessage(''), 3000);
-      return;
-    }
+    const deviceId = deviceIP || 'ESP1';
 
     setLoading(true);
-    setStatusMessage('⏳ Fetching data from device...');
+    setStatusMessage('⏳ Requesting data from device...');
 
     try {
-      // Detect if deviceIP is local (192.168.x.x, 10.x.x.x) or public domain/IP
-      const isLocalIP = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.)/.test(deviceIP);
-      const isProduction = window.location.protocol === 'https:';
+      console.log('Step 1: Sending READ_SENSORS command to device:', deviceId);
       
-      let response;
-      let fetchURL;
+      // Step 1: Send command to device via WebSocket
+      const requestResponse = await fetch(`/api/request-data?device=${deviceId}`, {
+        method: 'POST'
+      });
       
-      // If in production with LOCAL IP address, show helpful error
-      if (isProduction && isLocalIP) {
-        throw new Error(`Cannot access local IP ${deviceIP} from Azure server. Solutions: (1) Use ngrok to expose device, (2) Set up port forwarding, or (3) Test on local network only.`);
+      if (!requestResponse.ok) {
+        const errorData = await requestResponse.json();
+        throw new Error(errorData.error || `HTTP ${requestResponse.status}`);
       }
       
-      if (isProduction) {
-        // Production with public domain/IP: Use proxy to avoid Mixed Content blocking
-        fetchURL = `/api/device-data?ip=${deviceIP}`;
-        console.log('Production mode - Using proxy:', fetchURL);
-        response = await fetch(fetchURL, {
-          method: 'GET',
-        });
-      } else {
-        // Development: Direct fetch (HTTP to HTTP is allowed)
-        fetchURL = `http://${deviceIP}/data`;
-        console.log('Development mode - Direct fetch:', fetchURL);
-        response = await fetch(fetchURL, {
-          method: 'GET',
-          mode: 'cors',
-        });
-      }
+      const requestResult = await requestResponse.json();
+      console.log('Command sent successfully:', requestResult);
       
-      console.log('Response status:', response.status, response.statusText);
-
-      if (!response.ok) {
-        let errorMsg = `HTTP ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-          // Response is not JSON, use status text
-          errorMsg = response.statusText || errorMsg;
-        }
-        throw new Error(errorMsg);
+      setStatusMessage('⏳ Device is reading sensors...');
+      
+      // Step 2: Wait a moment for device to read sensors (2 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      console.log('Step 2: Fetching sensor data from server');
+      
+      // Step 3: Fetch the sensor data
+      const dataResponse = await fetch(`/api/device-data-ws?device=${deviceId}`);
+      
+      if (!dataResponse.ok) {
+        const errorData = await dataResponse.json();
+        throw new Error(errorData.error || `HTTP ${dataResponse.status}`);
       }
 
-      const data = await response.json();
+      const data = await dataResponse.json();
+      console.log('Received sensor data:', data);
       
       // Transform ESP8266 data format to our table format
       // ESP8266 sends: device, temperature, humidity, soilMoisture, lightLevel, latitude, longitude
