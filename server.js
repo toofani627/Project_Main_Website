@@ -4,6 +4,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { WebSocketServer } from "ws";
 import http from "http";
+import fetch from "node-fetch";
 
 dotenv.config();
 
@@ -12,6 +13,61 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const azureAiEndpoint = process.env.AZURE_PHI4_ENDPOINT || "";
+const azureAiKey = process.env.AZURE_PHI4_API_KEY || "";
+const azureAiApiVersion = process.env.AZURE_PHI4_API_VERSION || "2024-05-01-preview";
+
+const AGRI_SYSTEM_PROMPT = "You are an agritech AI model that helps farmers by analyzing sensor and weather data. Always respond only in JSON format, never in normal text. Use short and simple words so that a farmer can easily understand the message. Keep the tone helpful and clear. Focus only on irrigation, nutrients, weather impact, and disease risk. Do not include any information about motor or pH.";
+
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
+const buildAgritechMessages = ({ telemetry, weather, cropType, language, additionalQuery }) => {
+  const safeTelemetry = {
+    device: telemetry?.device || telemetry?.deviceId || telemetry?.deviceID || null,
+    temperature: toNumberOrNull(telemetry?.temperature),
+    humidity: toNumberOrNull(telemetry?.humidity),
+    soilMoisture: toNumberOrNull(telemetry?.soilMoisture),
+    soilMoistureRaw: toNumberOrNull(telemetry?.soilMoistureRaw),
+    lightLevel: toNumberOrNull(telemetry?.lightLevel),
+    lightStatus: telemetry?.lightStatus || null,
+    latitude: toNumberOrNull(telemetry?.latitude),
+    longitude: toNumberOrNull(telemetry?.longitude),
+    timestamp: telemetry?.timestamp || null
+  };
+
+  const safeWeather = {
+    avg_temp_7d: toNumberOrNull(weather?.avg_temp_7d),
+    avg_humidity_7d: toNumberOrNull(weather?.avg_humidity_7d),
+    rainfall_30d: toNumberOrNull(weather?.rainfall_30d),
+    forecast_next_7d: weather?.forecast_next_7d || "unknown",
+    sunlight_hours_7d: toNumberOrNull(weather?.sunlight_hours_7d),
+    soil_moisture_trend: weather?.soil_moisture_trend || "stable",
+    rain_thresh: toNumberOrNull(weather?.rain_thresh)
+  };
+
+  const telemetryBlock = JSON.stringify(safeTelemetry, null, 2);
+  const weatherBlock = JSON.stringify(safeWeather, null, 2);
+
+  const userPrompt = `Analyze the following data and reply only in JSON format.\n\nTelemetry Data:\n${telemetryBlock}\n\nCrop Type: ${cropType || "unknown"}\nRegional Weather Data:\n${weatherBlock}\n\nLanguage: ${language || "en"}\nAdditional Question: ${additionalQuery || "None"}\n\nRules:\n1. Give output only in JSON format exactly as shown below.\n2. Do not add any text before or after the JSON.\n3. Use simple, farmer-friendly language in ${language || "en"}.\n4. Apply these logic rules:\n   - temperature > 35 C -> hot or heat stress.\n   - humidity > 90% -> high disease chance.\n   - soilMoistureRaw >= 1000 -> very dry -> water needed.\n   - rainfall_30d < rain_thresh and avg_temp_7d rising -> drought risk.\n   - Use forecast and soil moisture trend to adjust irrigation and disease prediction.\n\nReturn your answer strictly in this JSON format only:\n\n{\n  "summary": "<short one-line summary in ${language || "en"}>",\n  "alerts": ["<alert1>", "<alert2>", ...],\n  "predictions": {\n    "irrigation_need": "<low|medium|high>",\n    "disease_risk": "<low|medium|high>",\n    "nutrient_adjustment": "<short tip>",\n    "expected_crop_impact_next_7d": "<short>"\n  },\n  "recommended_actions": ["<simple step 1>", "<simple step 2>", ...],\n  "weather_analysis": {"recent": "<short>", "forecast": "<short>"},\n  "confidence": <0-1>,\n  "explanation": ["<short reason 1>", "<short reason 2>"],\n  "additional_query": "<one follow-up question based on ${additionalQuery || "the farmer's question"}>"\n}\n\nIf the data seems incomplete or unclear, still give your best guess in the same JSON structure. Never break format.`;
+
+  return [
+    {
+      role: "system",
+      content: AGRI_SYSTEM_PROMPT
+    },
+    {
+      role: "user",
+      content: userPrompt
+    }
+  ];
+};
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -248,9 +304,6 @@ app.get("/api/device-data", async (req, res) => {
   }
 
   try {
-    // Import fetch for Node.js
-    const fetch = (await import('node-fetch')).default;
-    
     // If deviceIP looks like a domain (e.g., ngrok), use https
     const protocol = deviceIP.includes('.') && !ipPattern.test(deviceIP) ? 'https' : 'http';
     const deviceURL = `${protocol}://${deviceIP}/data`;
@@ -283,6 +336,103 @@ app.get("/api/device-data", async (req, res) => {
       error: "Failed to fetch from device",
       details: error.message,
       deviceIP: deviceIP
+    });
+  }
+});
+
+const callAgritechModel = async (messages) => {
+  if (!azureAiEndpoint || !azureAiKey) {
+    throw new Error("Azure AI service is not configured. Set AZURE_PHI4_ENDPOINT and AZURE_PHI4_API_KEY in .env");
+  }
+
+  const url = `${azureAiEndpoint.replace(/\/$/, "")}/chat/completions?api-version=${azureAiApiVersion}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${azureAiKey}`
+    },
+    body: JSON.stringify({
+      messages,
+      temperature: 0.4,
+      max_output_tokens: 600,
+      response_format: { type: "json_object" }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Azure AI request failed (${response.status}): ${errorText}`);
+  }
+
+  const result = await response.json();
+  const directContent = result?.output?.[0]?.content?.[0]?.text || result?.choices?.[0]?.message?.content;
+
+  if (!directContent) {
+    throw new Error("Azure AI returned an unexpected response format");
+  }
+
+  return {
+    raw: directContent,
+    parsed: JSON.parse(directContent)
+  };
+};
+
+app.post("/api/ai/analyze", async (req, res) => {
+  try {
+    const {
+      deviceId,
+      telemetry: telemetryOverride,
+      weather,
+      cropType,
+      language: lang,
+      additionalQuery
+    } = req.body || {};
+
+    let telemetry = telemetryOverride;
+    const resolvedDeviceId = deviceId || telemetry?.device || telemetry?.deviceId || telemetry?.deviceID || "";
+
+    if (!telemetry && resolvedDeviceId) {
+      const device = connectedDevices.get(resolvedDeviceId);
+      if (device?.data) {
+        telemetry = device.data;
+      }
+    }
+
+    if (!telemetry) {
+      return res.status(400).json({
+        error: "Telemetry data is required. Provide telemetry in the request body or specify a deviceId with cached data."
+      });
+    }
+
+    const messages = buildAgritechMessages({
+      telemetry,
+      weather,
+      cropType,
+      language: lang,
+      additionalQuery
+    });
+
+    const aiResult = await callAgritechModel(messages);
+
+    res.json({
+      success: true,
+      deviceId: resolvedDeviceId || telemetry.device || null,
+      analysis: aiResult.parsed,
+      raw: aiResult.raw
+    });
+  } catch (error) {
+    console.error("AI analysis error:", error);
+    if (error instanceof SyntaxError) {
+      return res.status(502).json({
+        error: "Failed to parse AI response as JSON",
+        details: error.message
+      });
+    }
+    res.status(500).json({
+      error: "Failed to generate AI analysis",
+      details: error.message
     });
   }
 });
