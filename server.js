@@ -81,17 +81,6 @@ Provide a flowing paragraph recommendation (under 100 words) in ${language === '
       content: userPrompt
     }
   ];
-
-  return [
-    {
-      role: "system",
-      content: AGRI_SYSTEM_PROMPT
-    },
-    {
-      role: "user",
-      content: userPrompt
-    }
-  ];
 };
 
 // Create HTTP server
