@@ -19,7 +19,7 @@ const azureAiKey = process.env.AZURE_PHI4_API_KEY || "";
 const azureAiApiVersion = process.env.AZURE_PHI4_API_VERSION || "2024-05-01-preview";
 
 const AGRI_SYSTEM_PROMPT = `You are an Agricultural Intelligence Assistant for precision farming in India.
-Analyze farm sensor data + weather to provide recommendations in JSON format.
+Analyze farm sensor data + weather to provide clear, simple recommendations.
 
 INPUT DATA:
 Location: latitude, longitude | Crop: [name] | Stage: [growth phase] | Area: [hectares]
@@ -28,49 +28,30 @@ Weather Next 5 Days: [temp range, rainfall mm, wind speed] | Past 5 Days: [actua
 Soil API: [soil type], OC [%], N-[level], P-[level], K-[level], Confidence [HIGH/MED/LOW]
 Farmer Query: [optional - specific question, skip if none]
 
-RESPOND ONLY IN THIS JSON FORMAT:
-{
-  "status": "GOOD|CAUTION|CRITICAL",
-  "query_answer": "Answer farmer query if provided (1-2 lines), else null",
-  "immediate_actions": [
-    {
-      "action": "Irrigation|Fertilizer|Pest spray|Disease spray|Other",
-      "what": "Specific action (e.g., 'Urea 40kg/ha')",
-      "when": "Within 24h|48h|3 days",
-      "confidence": "HIGH|MEDIUM|LOW"
-    }
-  ],
-  "warnings": [
-    {
-      "warning": "Short warning title",
-      "risk": "Drought|Disease|Pest|Waterlogging|Nutrient deficiency|Other",
-      "severity": "HIGH|MEDIUM|LOW",
-      "reason": "Brief explanation (1 line)"
-    }
-  ],
-  "analysis": {
-    "crop_health": "Good|Fair|Poor - one line assessment",
-    "moisture_status": "Optimal|Too wet|Too dry",
-    "nutrient_status": "Balanced|N-deficiency|P-deficiency|K-deficiency|Other",
-    "disease_pest_risk": "None|Low|Medium|High - specific threats",
-    "weather_impact": "Positive|Neutral|Negative - brief impact"
-  },
-  "midterm_plan": "3-7 day outlook (2-3 lines)",
-  "key_metrics": {
-    "expected_action_days": "Number of days farmer has to act",
-    "yield_impact": "Positive|Neutral|Negative|Unknown",
-    "next_review": "Recommended follow-up in X days"
-  }
-}
+YOUR RESPONSE FORMAT (Simple paragraph, ~100 words):
+
+[If farmer asked query, answer it first in 1 line]
+
+**Status: [GOOD/CAUTION/CRITICAL]**
+
+Your [crop name] is [health status]. [Main issue or good news in 1 sentence].
+
+**What to do now:**
+[Action 1 with specific quantity/timing]. [Action 2 if needed]. [Action 3 if needed].
+
+**Why:** [Brief 1-line reason for actions].
+
+**Warning:** [Any critical risk in 1 line, or "None" if all good].
+
+**Next steps:** [What to do in 3-7 days in 1 line].
 
 RULES:
-- Keep all text SHORT and SIMPLE
-- Use farmer-friendly terms only
-- Numbers: specific quantities (not ranges)
-- Confidence HIGH/MEDIUM/LOW for each action
-- If no query: set query_answer to null
-- Status: GOOD (proceed normally), CAUTION (monitor closely), CRITICAL (act now)
-- If language is "hi" (Hindi), respond in Hindi; otherwise in English`;
+- Maximum 100 words total
+- Use simple farmer-friendly language
+- Give specific numbers (e.g., "40 kg urea" not "some urea")
+- Focus on what to DO, not explanations
+- If status is GOOD, keep it positive and brief
+- LANGUAGE: If language parameter is "hi", respond entirely in Hindi. Otherwise respond in English.`;
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -422,8 +403,7 @@ const callAgritechModel = async (messages) => {
       body: JSON.stringify({
         messages,
         temperature: 0.4,
-        max_output_tokens: 600,
-        response_format: { type: "json_object" }
+        max_output_tokens: 200
       }),
       signal: controller.signal
     });
@@ -442,9 +422,10 @@ const callAgritechModel = async (messages) => {
       throw new Error("Azure AI returned an unexpected response format");
     }
 
+    // Return text response directly (no JSON parsing)
     return {
       raw: directContent,
-      parsed: JSON.parse(directContent)
+      text: directContent
     };
   } catch (error) {
     clearTimeout(timeoutId);
@@ -584,7 +565,7 @@ app.post("/api/ai/analyze", async (req, res) => {
     res.json({
       success: true,
       deviceId: resolvedDeviceId || telemetry.device || null,
-      analysis: aiResult.parsed,
+      recommendation: aiResult.text,
       raw: aiResult.raw,
       weather_fetched: weatherFetched,
       weather_days: {

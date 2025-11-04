@@ -325,7 +325,7 @@ const AIAnalysis = () => {
       await new Promise(resolve => setTimeout(resolve, 300));
       
       const result = await response.json();
-      setAiResult(result.analysis || null);
+      setAiResult(result.recommendation || null);
       
       setStatusMessage('✅ Analysis complete | ✓ Successfully parsed!');
     } catch (error) {
@@ -675,6 +675,21 @@ const AIAnalysis = () => {
             )}
 
             {!aiLoading && aiResult && (
+              <div className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-xl shadow-lg p-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center">
+                  <span className="mr-2">🌾</span>
+                  {language === 'hi' ? 'AI सिफारिश' : 'AI Recommendation'}
+                </h3>
+                <div className="prose prose-sm sm:prose max-w-none">
+                  <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-wrap">
+                    {aiResult}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Old complex format - keeping for reference, delete if not needed */}
+            {false && aiResult && aiResult.status && (
               <div className="space-y-4 sm:space-y-6">
                 {/* Status Badge */}
                 {aiResult.status && (
