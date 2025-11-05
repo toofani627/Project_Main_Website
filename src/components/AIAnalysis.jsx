@@ -32,35 +32,12 @@ const AIAnalysis = () => {
   };
   
   // Device data state with example data
-  const [devices, setDevices] = useState([
-    {
-      id: 'ESP_6853',
-      temperature: 28.5,
-      humidity: 65,
-      soil: 42,
-      pH: 6.8,
-      light: 750,
-      gps: '23.5, 77.0',
-      timestamp: new Date().toLocaleString(),
-      raw: {
-        device: 'ESP_6853',
-        temperature: 28.5,
-        humidity: 65,
-        soilMoisture: 42,
-        soilMoistureRaw: 850,
-        pH: 6.8,
-        lightLevel: 750,
-        lightStatus: 'Bright',
-        latitude: 23.5,
-        longitude: 77.0,
-        timestamp: new Date().toISOString()
-      }
-    }
-  ]);
+  const [devices, setDevices] = useState([]);
 
   const [selectedCrop, setSelectedCrop] = useState('');
   const [cropStage, setCropStage] = useState('');
   const [fieldArea, setFieldArea] = useState('');
+  const [selectedPH, setSelectedPH] = useState(''); // Selected pH value
   const [query, setQuery] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -317,6 +294,7 @@ const AIAnalysis = () => {
       cropType: selectedCrop || 'unknown',
       cropStage: cropStage || 'unknown',
       fieldArea: fieldArea || null,
+      soilPH: selectedPH || null,
       language: language || 'en',
       additionalQuery: query || 'None'
     };
@@ -721,12 +699,20 @@ const AIAnalysis = () => {
             <div className="flex justify-between gap-1 sm:gap-2 mb-3 sm:mb-4">
               {phColors.map((ph) => (
                 <div key={ph.value} className="flex-1">
-                  <div className={`${ph.color} h-16 sm:h-20 md:h-24 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs sm:text-sm md:text-base`}>
+                  <div 
+                    onClick={() => setSelectedPH(ph.value)}
+                    className={`${ph.color} h-16 sm:h-20 md:h-24 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs sm:text-sm md:text-base cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${selectedPH === ph.value ? 'ring-4 ring-yellow-400 scale-105' : ''}`}
+                  >
                     {ph.value}
                   </div>
                 </div>
               ))}
             </div>
+            {selectedPH && (
+              <p className="text-xs sm:text-sm text-green-600 text-center font-semibold mb-2">
+                ✓ {language === 'hi' ? `पीएच ${selectedPH} चुना गया` : `pH ${selectedPH} selected`}
+              </p>
+            )}
             <p className="text-xs sm:text-sm text-gray-600 text-center italic">
               {t('phNote')}
             </p>
