@@ -1070,7 +1070,7 @@ const AIAnalysis = () => {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
               >
                 <img 
-                  src="/src/components/toofani627-logo.png" 
+                  src="/toofani627-logo.png" 
                   alt="toofani627" 
                   className="w-8 h-8 rounded-full object-cover ring-2  "
                 />
