@@ -37,6 +37,7 @@ const AIAnalysis = () => {
   const [selectedCrop, setSelectedCrop] = useState('');
   const [cropStage, setCropStage] = useState('');
   const [fieldArea, setFieldArea] = useState('');
+  const [areaUnit, setAreaUnit] = useState('bigha'); // Default unit
   const [selectedPH, setSelectedPH] = useState(''); // Selected pH value
   const [query, setQuery] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -288,12 +289,32 @@ const AIAnalysis = () => {
       timestamp: raw.timestamp || Date.now()
     };
 
+    // Convert area to hectares based on selected unit
+    const convertToHectares = (area, unit) => {
+      if (!area || area === '') return null;
+      const areaNum = parseFloat(area);
+      if (isNaN(areaNum)) return null;
+      
+      switch(unit) {
+        case 'bigha':
+          return (areaNum * 0.25).toFixed(2); // 1 bigha ≈ 0.25 hectares
+        case 'acre':
+          return (areaNum * 0.4047).toFixed(2); // 1 acre ≈ 0.4047 hectares
+        case 'hectare':
+          return areaNum.toFixed(2);
+        default:
+          return areaNum.toFixed(2);
+      }
+    };
+
+    const fieldAreaInHectares = convertToHectares(fieldArea, areaUnit);
+
     const requestBody = {
       deviceId,
       telemetry: telemetryPayload,
       cropType: selectedCrop || 'unknown',
       cropStage: cropStage || 'unknown',
-      fieldArea: fieldArea || null,
+      fieldArea: fieldAreaInHectares || null,
       soilPH: selectedPH || null,
       language: language || 'en',
       additionalQuery: query || 'None'
@@ -665,17 +686,33 @@ const AIAnalysis = () => {
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm text-gray-600 mb-2">
-                    {language === 'hi' ? 'खेत का एरिया (हेक्टेयर)' : 'Field Area (ha)'}
+                    {language === 'hi' ? 'खेत का क्षेत्रफल' : 'Field Area'}
                   </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={fieldArea}
-                    onChange={(e) => setFieldArea(e.target.value)}
-                    placeholder={language === 'hi' ? 'जैसे: 2.5' : 'e.g., 2.5'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={fieldArea}
+                      onChange={(e) => setFieldArea(e.target.value)}
+                      placeholder={language === 'hi' ? 'जैसे: 5' : 'e.g., 5'}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <select
+                      value={areaUnit}
+                      onChange={(e) => setAreaUnit(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                    >
+                      <option value="bigha">{language === 'hi' ? 'बीघा' : 'Bigha'}</option>
+                      <option value="acre">{language === 'hi' ? 'एकड़' : 'Acre'}</option>
+                      <option value="hectare">{language === 'hi' ? 'हेक्टेयर' : 'Hectare'}</option>
+                    </select>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {language === 'hi' 
+                      ? `1 बीघा ≈ 0.25 हेक्टेयर, 1 एकड़ ≈ 0.4 हेक्टेयर` 
+                      : `1 Bigha ≈ 0.25 ha, 1 Acre ≈ 0.4 ha`}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1004,6 +1041,48 @@ const AIAnalysis = () => {
           </div>
         </div>
       ) : null}
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-6 mt-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Powered by Microsoft Phi-4 */}
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 text-sm font-medium">Powered by</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="11" height="11" fill="#F25022"/>
+                  <rect x="13" width="11" height="11" fill="#7FBA00"/>
+                  <rect y="13" width="11" height="11" fill="#00A4EF"/>
+                  <rect x="13" y="13" width="11" height="11" fill="#FFB900"/>
+                </svg>
+                <span className="font-semibold text-gray-800">Microsoft Phi-4</span>
+              </div>
+            </div>
+
+            {/* Developed by toofani627 */}
+            <div className="flex items-center gap-3">
+              <span className="text-gray-600 text-sm font-medium">Developed by</span>
+              <a 
+                href="https://github.com/toofani627" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+              >
+                <img 
+                  src="/src/components/toofani627-logo.png" 
+                  alt="toofani627" 
+                  className="w-8 h-8 rounded-full object-cover ring-2  "
+                />
+                <span className="font-semibold text-gray-800">toofani627</span>
+                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

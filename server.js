@@ -18,28 +18,69 @@ const azureAiEndpoint = process.env.AZURE_PHI4_ENDPOINT || "";
 const azureAiKey = process.env.AZURE_PHI4_API_KEY || "";
 const azureAiApiVersion = process.env.AZURE_PHI4_API_VERSION || "2024-05-01-preview";
 
-const AGRI_SYSTEM_PROMPT = `You are an Agricultural Intelligence Assistant providing crisp, actionable farming advice.
+const buildAgriSystemPrompt = (language) => {
+  const isHindi = language === "hi";
 
-Analyze the farm data and weather conditions to give a flowing paragraph recommendation in under 100 words.
+  return `You are an advanced Agricultural Intelligence Assistant for Indian farmers.
 
-RESPONSE REQUIREMENTS:
-- Write as a single flowing paragraph (NO bullet points, NO asterisks, NO special formatting)
-- Maximum 100 words
-- Use simple, conversational farmer-friendly language
-- Include specific actionable advice with quantities (e.g., "apply 40 kg urea per hectare")
-- Maintain natural flow: start with current status → explain key issue/opportunity → give 2-3 specific actions → mention timing
-- Be crisp and focused - don't overload with data
-- If everything is good, keep it positive and brief
-- If there's a problem, prioritize the most critical action first
+Your task is to analyze field sensor data, weather, and crop details to give short, realistic, and practical advice under 100 words. Use clear, friendly, farmer-style language — not technical explanations.
 
-LANGUAGE RULE:
-- If language parameter is "hi": Respond ENTIRELY in Hindi (Hindi script)
-- If language parameter is "en": Respond ENTIRELY in English
-- Match the language consistently throughout the entire response
+### You will receive:
+- Field sensors: air temperature, humidity, soil moisture, light (LDR), soil pH, and time
+- GPS location: helps determine climate and soil
+- Crop: name, growth stage, and area (with unit, e.g., m² or acres)
+- Weather: past 5 days + next 5 days forecast (temperature, rainfall, wind)
+- Soil: type, organic carbon, N, P, K levels (if available)
+- Farmer query: optional question from farmer
 
-Example flow (English): "Your wheat crop at vegetative stage looks healthy with good soil moisture at 65%. The upcoming rain forecast suggests applying nitrogen fertilizer now before the showers. Use 40 kg urea per hectare in the next 2 days. Monitor for fungal growth after rainfall and ensure proper drainage in low-lying areas."
+### Response Logic:
+1. If the farmer asked a query, answer that first  
+2. Then describe the crop's current health or issue (good / caution / critical)  
+3. Suggest 2–3 simple, practical actions with clear timing  
+4. **ALWAYS recommend water quantity in litres per square meter (L/m²)** with specific amount
+5. Mention only **fertilizer type/name** (Urea, DAP, SSP, MOP, compost, neem spray) if needed
+6. **NEVER mention fertilizer quantity, weight, or amount** (no kg, no grams, no measurements)
+7. Adjust irrigation or protection based on upcoming weather  
+8. Use same unit of area as input when referring to the field  
 
-Example flow (Hindi): "आपकी गेहूं की फसल वानस्पतिक अवस्था में स्वस्थ दिख रही है और मिट्टी में 65% नमी अच्छी है। आने वाली बारिश को देखते हुए अभी नाइट्रोजन खाद डालें। 40 किलो यूरिया प्रति हेक्टेयर अगले 2 दिन में डालें। बारिश के बाद फफूंद की निगरानी करें और निचले क्षेत्रों में जल निकासी सुनिश्चित करें।"`;
+### Critical Rules:
+- ✅ **DO give water quantity:** "apply 4 litres per square meter"
+- ❌ **DO NOT give fertilizer quantity:** Never say "50 kg urea" or "25 kg DAP"
+- ✅ **DO mention fertilizer name only:** "consider using DAP" or "apply urea fertilizer"
+
+### Output Rules:
+- Write **one continuous paragraph** (no bullets or formatting)
+- Maximum **100 words**
+- Tone: **natural, warm, and farmer-friendly**
+- Focus on what to do now and when
+- Mention weather if relevant ("since rain is expected tomorrow…")
+
+${isHindi ? `
+🚨 CRITICAL: RESPOND IN HINDI ONLY 🚨
+- Language: हिन्दी (Devanागरी script)
+- Use natural Hindi words (खेत, फसल, खाद, पानी, मिट्टी, रोग)
+- Numbers can be digits, but text must be Hindi only
+- ✅ ALWAYS mention water quantity in L/m² (e.g., "3 लीटर पानी प्रति वर्ग मीटर")
+- ✅ Suggest only fertilizer NAME if needed (जैसे यूरिया, डीएपी, गोबर खाद, नीम घोल)
+- ❌ NEVER mention fertilizer quantity (no "50 किलो" or "25 किलो")
+- Do not mix any English
+
+Example (Hindi):
+"आपकी मक्का की फसल स्वस्थ है लेकिन मिट्टी थोड़ी सूखी है। आज 4 लीटर पानी प्रति वर्ग मीटर दें। अगले दो दिन बारिश नहीं है इसलिए हल्की सिंचाई रखें। अगर पत्ते पीले हों तो डीएपी खाद डालने पर विचार करें।"
+
+` : `
+🚨 CRITICAL: RESPOND IN ENGLISH ONLY 🚨
+- Language: English only
+- Keep tone simple, friendly, and clear
+- ✅ ALWAYS mention water quantity in L/m² (e.g., "3 litres per square meter")
+- ✅ Suggest only fertilizer NAME/TYPE if needed (Urea, DAP, SSP, MOP, compost, neem spray)
+- ❌ NEVER mention fertilizer quantity (no "50 kg" or "25 kg" or any weight/amount)
+
+Example (English):
+"Your maize crop looks healthy but soil moisture is slightly low. Apply 4 litres of water per square meter today. Since no rain is expected for two days, keep light irrigation. If leaves start yellowing, consider using DAP fertilizer."
+`}
+`;
+};
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -49,7 +90,7 @@ const toNumberOrNull = (value) => {
   return Number.isFinite(num) ? num : null;
 };
 
-const buildAgritechMessages = ({ telemetry, weather, cropType, cropStage, fieldArea, language, additionalQuery }) => {
+const buildAgritechMessages = ({ telemetry, weather, cropType, cropStage, fieldArea, soilPH, language, additionalQuery }) => {
   // Extract weather arrays (token-efficient format)
   const past5Days = weather?.past5Days || [];
   const next5Days = weather?.next5Days || [];
@@ -58,23 +99,30 @@ const buildAgritechMessages = ({ telemetry, weather, cropType, cropStage, fieldA
   const past5Array = past5Days.map(d => `[${d.temp_min}, ${d.temp_max}, ${d.rain_mm}, ${d.wind_speed}]`).join(', ');
   const next5Array = next5Days.map(d => `[${d.temp_min}, ${d.temp_max}, ${d.rain_mm}, ${d.wind_speed}]`).join(', ');
 
+  // Use soilPH from manual selection if provided, otherwise use sensor pH
+  const phValue = soilPH || telemetry?.pH || 'N/A';
+  
   // Sensor data as arrays
-  const sensorData = `pH=${telemetry?.pH || 'N/A'}, Moisture=${telemetry?.soilMoisture || 'N/A'}%, Temp=${telemetry?.temperature || 'N/A'}°C, Humidity=${telemetry?.humidity || 'N/A'}%, Light=${telemetry?.lightLevel || 'N/A'}lux`;
+  const sensorData = `pH=${phValue}, Moisture=${telemetry?.soilMoisture || 'N/A'}%, Temp=${telemetry?.temperature || 'N/A'}°C, Humidity=${telemetry?.humidity || 'N/A'}%, Light=${telemetry?.lightLevel || 'N/A'}lux`;
 
+  // Determine language and create appropriate prompt
+  const selectedLanguage = language || 'en';
+  const isHindi = selectedLanguage === 'hi';
+  
   const userPrompt = `Location: ${telemetry?.latitude || 0}, ${telemetry?.longitude || 0}
 Crop: ${cropType || 'unknown'} | Stage: ${cropStage || 'unknown'} | Area: ${fieldArea || 'N/A'} hectares
-Sensors: ${sensorData}
+Sensors: ${sensorData}${soilPH ? ` (pH ${soilPH} manually selected)` : ''}
 Weather Past 5 Days (min,max,rain,wind): ${past5Array || 'No data'}
 Weather Next 5 Days (min,max,rain,wind): ${next5Array || 'No data'}
-Language: ${language || 'en'}
 ${additionalQuery ? `Farmer Question: ${additionalQuery}` : ''}
 
-Provide a flowing paragraph recommendation (under 100 words) in ${language === 'hi' ? 'Hindi' : 'English'}.`;
+🚨 RESPOND IN ${isHindi ? 'HINDI (हिन्दी) ONLY' : 'ENGLISH ONLY'} 🚨
+${isHindi ? 'हिन्दी में जवाब दें - सभी शब्द हिन्दी में' : 'Respond in English - all words in English'}`;
 
   return [
     {
       role: "system",
-      content: AGRI_SYSTEM_PROMPT
+      content: buildAgriSystemPrompt(selectedLanguage)
     },
     {
       role: "user",
@@ -366,6 +414,9 @@ const callAgritechModel = async (messages) => {
   }
   url += `?api-version=${azureAiApiVersion}`;
 
+  console.log('🤖 Calling Azure AI model...');
+  console.log(`📤 Request: ${messages.length} messages, user prompt length: ${messages[messages.length-1]?.content?.length || 0}`);
+
   // Add 30-second timeout to prevent hanging requests
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -389,15 +440,21 @@ const callAgritechModel = async (messages) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`❌ Azure AI error (${response.status}):`, errorText);
       throw new Error(`Azure AI request failed (${response.status}): ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('📥 Azure AI raw response structure:', JSON.stringify(result, null, 2).substring(0, 500));
+    
     const directContent = result?.output?.[0]?.content?.[0]?.text || result?.choices?.[0]?.message?.content;
 
     if (!directContent) {
+      console.error('❌ Unexpected response format:', JSON.stringify(result, null, 2));
       throw new Error("Azure AI returned an unexpected response format");
     }
+
+    console.log(`✅ AI response extracted (${directContent.length} chars)`);
 
     // Return text response directly (no JSON parsing)
     return {
@@ -490,9 +547,13 @@ app.post("/api/ai/analyze", async (req, res) => {
       cropType,
       cropStage,
       fieldArea,
+      soilPH,
       language: lang,
       additionalQuery
     } = req.body || {};
+
+    // Log language preference
+    console.log(`🌐 Language: ${lang || 'en'} (${lang === 'hi' ? 'Hindi' : 'English'})`);
 
     let telemetry = telemetryOverride;
     const resolvedDeviceId = deviceId || telemetry?.device || telemetry?.deviceId || telemetry?.deviceID || "";
@@ -527,17 +588,33 @@ app.post("/api/ai/analyze", async (req, res) => {
       console.warn('⚠️ Weather fetch failed, proceeding without weather:', error.message);
     }
 
+    // Ensure language is properly set
+    const selectedLanguage = lang || 'en';
+    console.log(`🔤 Selected Language: "${selectedLanguage}" → ${selectedLanguage === 'hi' ? '🇮🇳 HINDI (हिन्दी)' : '🇬🇧 ENGLISH'}`);
+    
+    if (soilPH) {
+      console.log(`🧪 Manual pH selected: ${soilPH}`);
+    }
+    
     const messages = buildAgritechMessages({
       telemetry,
       weather: weatherData,
       cropType,
       cropStage,
       fieldArea,
-      language: lang,
+      soilPH,
+      language: selectedLanguage,
       additionalQuery
     });
+    
+    console.log(`📝 AI Prompt created with language: ${selectedLanguage === 'hi' ? 'Hindi (हिन्दी)' : 'English'}`);
+    console.log(`📋 System Prompt Preview: ${messages[0].content.substring(0, 150)}...`);
+    console.log(`📋 User Prompt Preview: ${messages[1].content.substring(0, 150)}...`);
 
     const aiResult = await callAgritechModel(messages);
+    
+    console.log(`✅ AI Response received (length: ${aiResult.text?.length || 0} chars)`);
+    console.log(`📝 Preview: ${aiResult.text?.substring(0, 100)}...`);
 
     res.json({
       success: true,
@@ -553,7 +630,8 @@ app.post("/api/ai/analyze", async (req, res) => {
     
     console.log('✅ === AI Analysis Completed ===\n');
   } catch (error) {
-    console.error("AI analysis error:", error);
+    console.error("❌ AI analysis error:", error);
+    console.error("Error stack:", error.stack);
     if (error instanceof SyntaxError) {
       return res.status(502).json({
         error: "Failed to parse AI response as JSON",
