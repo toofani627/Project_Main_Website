@@ -741,9 +741,12 @@ const AIAnalysis = () => {
             </div>
             {selectedPH && (
               <p className="text-xs sm:text-sm text-green-600 text-center font-semibold mb-2">
-                ✓ {language === 'hi' ? `पीएच ${selectedPH} चुना गया` : `pH ${selectedPH} selected`}
+                ✓ {language === 'hi' ? `पीएच ${selectedPH} चुना गया` : language === 'ta' ? `pH ${selectedPH} தேர்ந்தெடுக்கப்பட்டது` : `pH ${selectedPH} selected`}
               </p>
             )}
+            <p className="text-xs sm:text-sm text-blue-600 text-center font-semibold mb-2">
+              📋 {t('phInstruction')}
+            </p>
             <p className="text-xs sm:text-sm text-gray-600 text-center italic">
               {t('phNote')}
             </p>

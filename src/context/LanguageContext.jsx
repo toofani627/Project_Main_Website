@@ -63,6 +63,7 @@ const translations = {
     // pH Scale
     soilPHScale: 'Soil pH Scale',
     phNote: 'pH values from acidic (red) to neutral (green) to alkaline (blue)',
+    phInstruction: 'Place the pH paper in the soil and match the color with the box',
     
     // Additional Query
     additionalQuery: 'Additional Query',
@@ -128,6 +129,7 @@ const translations = {
     // pH Scale
     soilPHScale: 'मिट्टी pH लेवल',
     phNote: 'pH - खट्टा (लाल) से साधारण (हरा) से खारी (नीला)',
+    phInstruction: 'pH पेपर को मिट्टी में रखें और रंग को बॉक्स से मिलाएं',
     
     // Additional Query
     additionalQuery: 'और सवाल',
@@ -194,6 +196,7 @@ const translations = {
     // pH Scale
     soilPHScale: 'மண் pH அளவு',
     phNote: 'pH - அமிலம் (சிவப்பு) முதல் நடுநிலை (பச்சை) முதல் காரம் (நீலம்)',
+    phInstruction: 'pH காகிதத்தை மண்ணில் வைத்து நிறத்தை பெட்டியுடன் பொருத்தவும்',
     
     // Additional Query
     additionalQuery: 'கூடுதல் கேள்வி',
