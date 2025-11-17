@@ -32,7 +32,31 @@ const AIAnalysis = () => {
   };
   
   // Device data state with example data
-  const [devices, setDevices] = useState([]);
+  const [devices, setDevices] = useState([
+    {
+      id: 'ESP_6853',
+      temperature: 28.5,
+      humidity: 65,
+      soil: 42,
+      pH: 6.8,
+      light: 750,
+      gps: '23.5, 77.0',
+      timestamp: new Date().toLocaleString(),
+      raw: {
+        device: 'ESP_6853',
+        temperature: 28.5,
+        humidity: 65,
+        soilMoisture: 42,
+        soilMoistureRaw: 850,
+        pH: 6.8,
+        lightLevel: 750,
+        lightStatus: 'Bright',
+        latitude: 23.5,
+        longitude: 77.0,
+        timestamp: new Date().toISOString()
+      }
+    }
+  ]);
 
   const [selectedCrop, setSelectedCrop] = useState('');
   const [cropStage, setCropStage] = useState('');
@@ -98,8 +122,8 @@ const AIAnalysis = () => {
     if (!deviceId) {
       setErrorPopup({
         show: true,
-        message: language === 'hi' ? 'पहले डिवाइस ID डालें' : 'Please enter Device ID first',
-        solution: language === 'hi' ? 'ऊपर बॉक्स में अपना डिवाइस ID टाइप करें' : 'Type your Device ID in the box above'
+        message: language === 'hi' ? 'पहले डिवाइस ID डालें' : language === 'ta' ? 'முதலில் சாதன ஐடியை உள்ளிடவும்' : 'Please enter Device ID first',
+        solution: language === 'hi' ? 'ऊपर बॉक्स में अपना डिवाइस ID टाइप करें' : language === 'ta' ? 'மேலே உள்ள பெட்டியில் உங்கள் சாதன ஐடியை தட்டச்சு செய்யவும்' : 'Type your Device ID in the box above'
       });
       setShowDeviceIdInput(true);
       return;
@@ -108,7 +132,7 @@ const AIAnalysis = () => {
     console.log('Using device ID:', deviceId);
 
     setLoading(true);
-    setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस से डेटा मांग रहे हैं...' : 'Requesting data from device...'));
+    setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस से डेटा मांग रहे हैं...' : language === 'ta' ? 'சாதனத்திலிருந்து தரவு கோருகிறது...' : 'Requesting data from device...'));
 
     try {
       console.log('Step 1: Sending READ_SENSORS command to device:', deviceId);
@@ -126,7 +150,7 @@ const AIAnalysis = () => {
       const requestResult = await requestResponse.json();
       console.log('Command sent successfully:', requestResult);
       
-      setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस सेंसर पढ़ रहा है...' : 'Device is reading sensors...'));
+      setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस सेंसर पढ़ रहा है...' : language === 'ta' ? 'சாதனம் உணரிகளை படிக்கிறது...' : 'Device is reading sensors...'));
       
       // Step 2: Wait a moment for device to read sensors (2 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -170,8 +194,8 @@ const AIAnalysis = () => {
       // Show success popup
       setErrorPopup({
         show: true,
-        message: language === 'hi' ? '✓ डेटा मिल गया!' : '✓ Data received successfully!',
-        solution: language === 'hi' ? 'अब नीचे टेबल में देखें' : 'Check the table below',
+        message: language === 'hi' ? '✓ डेटा मिल गया!' : language === 'ta' ? '✓ தரவு வெற்றிகரமாக பெறப்பட்டது!' : '✓ Data received successfully!',
+        solution: language === 'hi' ? 'अब नीचे टेबल में देखें' : language === 'ta' ? 'கீழே அட்டவணையில் பார்க்கவும்' : 'Check the table below',
         type: 'success'
       });
       setStatusMessage('');
@@ -184,17 +208,17 @@ const AIAnalysis = () => {
       let solution = '';
       
       if (error.message.includes('Device not connected')) {
-        errorMessage = language === 'hi' ? 'डिवाइस कनेक्ट नहीं है' : 'Device not connected';
-        solution = language === 'hi' ? 'डिवाइस चालू करें और वाईफाई से जोड़ें' : 'Turn on device and connect to WiFi';
+        errorMessage = language === 'hi' ? 'डिवाइस कनेक्ट नहीं है' : language === 'ta' ? 'சாதனம் இணைக்கப்படவில்லை' : 'Device not connected';
+        solution = language === 'hi' ? 'डिवाइस चालू करें और वाईफाई से जोड़ें' : language === 'ta' ? 'சாதனத்தை இயக்கி WiFi உடன் இணைக்கவும்' : 'Turn on device and connect to WiFi';
       } else if (error.message.includes('offline')) {
-        errorMessage = language === 'hi' ? 'डिवाइस ऑफलाइन है' : 'Device is offline';
-        solution = language === 'hi' ? 'डिवाइस की पॉवर और इंटरनेट चेक करें' : 'Check device power and internet';
+        errorMessage = language === 'hi' ? 'डिवाइस ऑफलाइन है' : language === 'ta' ? 'சாதனம் ஆஃப்லைனில் உள்ளது' : 'Device is offline';
+        solution = language === 'hi' ? 'डिवाइस की पॉवर और इंटरनेट चेक करें' : language === 'ta' ? 'சாதன மின்சாரம் மற்றும் இணையத்தை சரிபார்க்கவும்' : 'Check device power and internet';
       } else if (error.message.includes('No data available')) {
-        errorMessage = language === 'hi' ? 'डेटा नहीं मिला' : 'No data available';
-        solution = language === 'hi' ? '2-3 मिनट इंतजार करें और फिर कोशिश करें' : 'Wait 2-3 minutes and try again';
+        errorMessage = language === 'hi' ? 'डेटा नहीं मिला' : language === 'ta' ? 'தரவு கிடைக்கவில்லை' : 'No data available';
+        solution = language === 'hi' ? '2-3 मिनट इंतजार करें और फिर कोशिश करें' : language === 'ta' ? '2-3 நிமிடங்கள் காத்திருந்து மீண்டும் முயற்சிக்கவும்' : 'Wait 2-3 minutes and try again';
       } else {
-        errorMessage = language === 'hi' ? 'डेटा लेने में गड़बड़ी' : 'Error getting data';
-        solution = language === 'hi' ? 'डिवाइस ID चेक करें या दोबारा कोशिश करें' : 'Check Device ID or try again';
+        errorMessage = language === 'hi' ? 'डेटा लेने में गड़बड़ी' : language === 'ta' ? 'தரவு பெறுவதில் பிழை' : 'Error getting data';
+        solution = language === 'hi' ? 'डिवाइस ID चेक करें या दोबारा कोशिश करें' : language === 'ta' ? 'சாதன ஐடியை சரிபார்த்து மீண்டும் முயற்சிக்கவும்' : 'Check Device ID or try again';
       }
       
       setErrorPopup({
@@ -247,8 +271,8 @@ const AIAnalysis = () => {
       setErrorPopup({
         show: true,
         type: 'error',
-        message: language === 'hi' ? 'पहले डिवाइस ID डालें' : 'Enter Device ID first',
-        solution: language === 'hi' ? 'ऊपर डिवाइस ID बॉक्स में अपना ID टाइप करें' : 'Type your ID in the Device ID box above'
+        message: language === 'hi' ? 'पहले डिवाइस ID डालें' : language === 'ta' ? 'முதலில் சாதன ஐடியை உள்ளிடவும்' : 'Enter Device ID first',
+        solution: language === 'hi' ? 'ऊपर डिवाइस ID बॉक्स में अपना ID टाइप करें' : language === 'ta' ? 'மேலே சாதன ஐடி பெட்டியில் உங்கள் ஐடியை தட்டச்சு செய்யவும்' : 'Type your ID in the Device ID box above'
       });
       setShowDeviceIdInput(true);
       setTimeout(() => setErrorPopup({ show: false, type: '', message: '', solution: '' }), 5000);
@@ -259,8 +283,8 @@ const AIAnalysis = () => {
       setErrorPopup({
         show: true,
         type: 'error',
-        message: language === 'hi' ? 'पहले सेंसर डेटा लें' : 'Get sensor data first',
-        solution: language === 'hi' ? '"Get Data" बटन दबाएं' : 'Click "Get Data" button'
+        message: language === 'hi' ? 'पहले सेंसर डेटा लें' : language === 'ta' ? 'முதலில் உணரி தரவை பெறவும்' : 'Get sensor data first',
+        solution: language === 'hi' ? '"Get Data" बटन दबाएं' : language === 'ta' ? '"தரவைப் பெறு" பொத்தானை கிளிக் செய்யவும்' : 'Click "Get Data" button'
       });
       setTimeout(() => setErrorPopup({ show: false, type: '', message: '', solution: '' }), 5000);
       return;
@@ -371,21 +395,29 @@ const AIAnalysis = () => {
       
       // Create simple, actionable error message
       let simpleError = language === 'hi' 
-        ? 'AI से जवाब नहीं मिला। कृपया दोबारा कोशिश करें।' 
+        ? 'AI से जवाब नहीं मिला। कृपया दोबारा कोशिश करें।'
+        : language === 'ta'
+        ? 'AI பதில் தோல்வியுற்றது. மீண்டும் முயற்சிக்கவும்.'
         : 'AI response failed. Please try again.';
       
       // Check for specific errors
       if (error.message.includes('network') || error.message.includes('fetch')) {
         simpleError = language === 'hi'
           ? 'इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।'
+          : language === 'ta'
+          ? 'இணைய இணைப்பை சரிபார்த்து மீண்டும் முயற்சிக்கவும்.'
           : 'Check internet connection and retry.';
       } else if (error.message.includes('timeout')) {
         simpleError = language === 'hi'
           ? 'समय समाप्त। कृपया फिर से कोशिश करें।'
+          : language === 'ta'
+          ? 'நேரம் முடிந்தது. மீண்டும் முயற்சிக்கவும்.'
           : 'Request timeout. Please try again.';
       } else if (error.message.includes('500') || error.message.includes('502')) {
         simpleError = language === 'hi'
           ? 'सर्वर में दिक्कत है। थोड़ी देर बाद कोशिश करें।'
+          : language === 'ta'
+          ? 'சேவையக பிரச்சனை. சிறிது நேரம் கழித்து முயற்சிக்கவும்.'
           : 'Server issue. Try again in a moment.';
       }
       
@@ -474,7 +506,7 @@ const AIAnalysis = () => {
                 {loading ? (
                   <>
                     <span className="animate-spin">⏳</span>
-                    <span>{language === 'en' ? 'Fetching...' : 'डेटा आ रहा है...'}</span>
+                    <span>{language === 'en' ? 'Fetching...' : language === 'hi' ? 'डेटा आ रहा है...' : 'தரவு வருகிறது...'}</span>
                   </>
                 ) : (
                   <>
@@ -628,39 +660,39 @@ const AIAnalysis = () => {
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               >
                 <option value="">{t('chooseCrop')}</option>
-                <option value="wheat">{language === 'hi' ? '🌾 गेहूं (Wheat)' : '🌾 Wheat'}</option>
-                <option value="rice">{language === 'hi' ? '🍚 धान (Rice)' : '🍚 Rice'}</option>
-                <option value="maize">{language === 'hi' ? '🌽 मक्का (Maize)' : '🌽 Maize/Corn'}</option>
-                <option value="sugarcane">{language === 'hi' ? '🎋 गन्ना (Sugarcane)' : '🎋 Sugarcane'}</option>
-                <option value="cotton">{language === 'hi' ? '☁️ कपास (Cotton)' : '☁️ Cotton'}</option>
-                <option value="soybean">{language === 'hi' ? '🫘 सोयाबीन (Soybean)' : '🫘 Soybean'}</option>
-                <option value="chickpea">{language === 'hi' ? '🫛 चना (Chickpea)' : '🫛 Chickpea/Gram'}</option>
-                <option value="pigeon-pea">{language === 'hi' ? '🫘 तूर/अरहर (Pigeon Pea)' : '🫘 Pigeon Pea/Arhar'}</option>
-                <option value="lentil">{language === 'hi' ? '🫛 मसूर (Lentil)' : '🫛 Lentil'}</option>
-                <option value="groundnut">{language === 'hi' ? '🥜 मूंगफली (Groundnut)' : '🥜 Groundnut/Peanut'}</option>
-                <option value="mustard">{language === 'hi' ? '🌼 सरसों (Mustard)' : '🌼 Mustard'}</option>
-                <option value="potato">{language === 'hi' ? '🥔 आलू (Potato)' : '🥔 Potato'}</option>
-                <option value="onion">{language === 'hi' ? '🧅 प्याज (Onion)' : '🧅 Onion'}</option>
-                <option value="tomato">{language === 'hi' ? '🍅 टमाटर (Tomato)' : '🍅 Tomato'}</option>
-                <option value="chili">{language === 'hi' ? '🌶️ मिर्च (Chili)' : '🌶️ Chili/Pepper'}</option>
-                <option value="millet">{language === 'hi' ? '🌾 बाजरा (Millet)' : '🌾 Pearl Millet/Bajra'}</option>
-                <option value="sorghum">{language === 'hi' ? '🌾 ज्वार (Sorghum)' : '🌾 Sorghum/Jowar'}</option>
-                <option value="tea">{language === 'hi' ? '🍵 चाय (Tea)' : '🍵 Tea'}</option>
-                <option value="coffee">{language === 'hi' ? '☕ कॉफी (Coffee)' : '☕ Coffee'}</option>
-                <option value="banana">{language === 'hi' ? '🍌 केला (Banana)' : '🍌 Banana'}</option>
-                <option value="mango">{language === 'hi' ? '🥭 आम (Mango)' : '🥭 Mango'}</option>
+                <option value="wheat">{language === 'hi' ? '🌾 गेहूं (Wheat)' : language === 'ta' ? '🌾 கோதுமை' : '🌾 Wheat'}</option>
+                <option value="rice">{language === 'hi' ? '🍚 धान (Rice)' : language === 'ta' ? '🍚 நெல்' : '🍚 Rice'}</option>
+                <option value="maize">{language === 'hi' ? '🌽 मक्का (Maize)' : language === 'ta' ? '🌽 சோளம்' : '🌽 Maize/Corn'}</option>
+                <option value="sugarcane">{language === 'hi' ? '🎋 गन्ना (Sugarcane)' : language === 'ta' ? '🎋 கரும்பு' : '🎋 Sugarcane'}</option>
+                <option value="cotton">{language === 'hi' ? '☁️ कपास (Cotton)' : language === 'ta' ? '☁️ பருத்தி' : '☁️ Cotton'}</option>
+                <option value="soybean">{language === 'hi' ? '🫘 सोयाबीन (Soybean)' : language === 'ta' ? '🫘 சோயாபீன்' : '🫘 Soybean'}</option>
+                <option value="chickpea">{language === 'hi' ? '🫛 चना (Chickpea)' : language === 'ta' ? '🫛 கொண்டைக்கடலை' : '🫛 Chickpea/Gram'}</option>
+                <option value="pigeon-pea">{language === 'hi' ? '🫘 तूर/अरहर (Pigeon Pea)' : language === 'ta' ? '🫘 துவரை' : '🫘 Pigeon Pea/Arhar'}</option>
+                <option value="lentil">{language === 'hi' ? '🫛 मसूर (Lentil)' : language === 'ta' ? '🫛 பருப்பு' : '🫛 Lentil'}</option>
+                <option value="groundnut">{language === 'hi' ? '🥜 मूंगफली (Groundnut)' : language === 'ta' ? '🥜 நிலக்கடலை' : '🥜 Groundnut/Peanut'}</option>
+                <option value="mustard">{language === 'hi' ? '🌼 सरसों (Mustard)' : language === 'ta' ? '🌼 கடுகு' : '🌼 Mustard'}</option>
+                <option value="potato">{language === 'hi' ? '🥔 आलू (Potato)' : language === 'ta' ? '🥔 உருளைக்கிழங்கு' : '🥔 Potato'}</option>
+                <option value="onion">{language === 'hi' ? '🧅 प्याज (Onion)' : language === 'ta' ? '🧅 வெங்காயம்' : '🧅 Onion'}</option>
+                <option value="tomato">{language === 'hi' ? '🍅 टमाटर (Tomato)' : language === 'ta' ? '🍅 தக்காளி' : '🍅 Tomato'}</option>
+                <option value="chili">{language === 'hi' ? '🌶️ मिर्च (Chili)' : language === 'ta' ? '🌶️ மிளகாய்' : '🌶️ Chili/Pepper'}</option>
+                <option value="millet">{language === 'hi' ? '🌾 बाजरा (Millet)' : language === 'ta' ? '🌾 கம்பு' : '🌾 Pearl Millet/Bajra'}</option>
+                <option value="sorghum">{language === 'hi' ? '🌾 ज्वार (Sorghum)' : language === 'ta' ? '🌾 சோளம்' : '🌾 Sorghum/Jowar'}</option>
+                <option value="tea">{language === 'hi' ? '🍵 चाय (Tea)' : language === 'ta' ? '🍵 தேநீர்' : '🍵 Tea'}</option>
+                <option value="coffee">{language === 'hi' ? '☕ कॉफी (Coffee)' : language === 'ta' ? '☕ காபி' : '☕ Coffee'}</option>
+                <option value="banana">{language === 'hi' ? '🍌 केला (Banana)' : language === 'ta' ? '🍌 வாழை' : '🍌 Banana'}</option>
+                <option value="mango">{language === 'hi' ? '🥭 आम (Mango)' : language === 'ta' ? '🥭 மாம்பழம்' : '🥭 Mango'}</option>
               </select>
             </div>
 
             {/* Crop Stage and Field Area */}
             <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">
-                {language === 'hi' ? 'फसल का चरण और एरिया' : 'Crop Stage & Field Area'}
+                {language === 'hi' ? 'फसल का चरण और एरिया' : language === 'ta' ? 'பயிர் நிலை மற்றும் வயல் பரப்பு' : 'Crop Stage & Field Area'}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm text-gray-600 mb-2">
-                    {language === 'hi' ? 'फसल का चरण' : 'Crop Stage'}
+                    {language === 'hi' ? 'फसल का चरण' : language === 'ta' ? 'பயிர் நிலை' : 'Crop Stage'}
                   </label>
                   <select
                     value={cropStage}
