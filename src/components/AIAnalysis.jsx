@@ -38,6 +38,7 @@ const AIAnalysis = () => {
       temperature: 28.5,
       humidity: 65,
       soil: 42,
+      soilTemp: 24.8,
       pH: 6.8,
       light: 750,
       gps: '23.5, 77.0',
@@ -47,6 +48,7 @@ const AIAnalysis = () => {
         temperature: 28.5,
         humidity: 65,
         soilMoisture: 42,
+        soilTemperature: 24.8,
         soilMoistureRaw: 850,
         pH: 6.8,
         lightLevel: 750,
@@ -175,6 +177,7 @@ const AIAnalysis = () => {
         temperature: data.temperature || 0,
         humidity: data.humidity || 0,
         soil: data.soilMoisture || 0,
+        soilTemp: data.soilTemperature || 0,
         light: data.lightLevel || 0,
         gps: `${data.latitude || 0}, ${data.longitude || 0}`,
         timestamp: new Date().toLocaleString('en-GB', {
@@ -305,6 +308,7 @@ const AIAnalysis = () => {
       temperature: toNumberOrNull(raw.temperature ?? latest.temperature),
       humidity: toNumberOrNull(raw.humidity ?? latest.humidity),
       soilMoisture: toNumberOrNull(raw.soilMoisture ?? latest.soil),
+      soilTemperature: toNumberOrNull(raw.soilTemperature ?? latest.soilTemp),
       soilMoistureRaw: toNumberOrNull(raw.soilMoistureRaw),
       lightLevel: toNumberOrNull(raw.lightLevel ?? latest.light),
       lightStatus: raw.lightStatus || (latest.light >= 500 ? 'Bright' : 'Dark'),
@@ -588,6 +592,9 @@ const AIAnalysis = () => {
                     {t('soil')}
                   </th>
                   <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('soilTemp')}
+                  </th>
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
                     {t('light')}
                   </th>
                   <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
@@ -601,7 +608,7 @@ const AIAnalysis = () => {
               <tbody>
                 {devices.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="border border-gray-300 px-4 py-8 text-center text-gray-500 italic">
+                    <td colSpan="8" className="border border-gray-300 px-4 py-8 text-center text-gray-500 italic">
                       {t('noDataAvailable') || 'No data available. Click "Get Data" to fetch from device.'}
                     </td>
                   </tr>
@@ -612,6 +619,7 @@ const AIAnalysis = () => {
                       <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.temperature}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.humidity}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.soil}</td>
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.soilTemp}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.light}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.gps}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.timestamp}</td>
