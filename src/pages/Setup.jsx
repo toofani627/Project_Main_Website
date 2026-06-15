@@ -140,7 +140,7 @@ const Setup = () => {
           <p style={{ fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.4)', marginBottom: '0.5rem' }}>
             Welcome, {displayName}
           </p>
-          <h1 style={{ fontSize: '2.75rem', fontFamily: 'inherit', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: '0.75rem' }}>
+          <h1 style={{ fontSize: '2.75rem', fontFamily: '"Alfa Slab One", cursive', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: '0.75rem' }}>
             Tell Us About<br />Your Farm
           </h1>
           <p style={{ fontSize: '0.8rem', color: 'rgba(244,231,213,0.45)', lineHeight: 1.6 }}>
@@ -163,7 +163,7 @@ const Setup = () => {
         {/* ── Section 1: Last Crops ───────────────────────────────────── */}
         <div style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-            <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: 'inherit' }}>01</div>
+            <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: '"Alfa Slab One", cursive' }}>01</div>
             <div>
               <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Last Crops Grown</p>
               <p style={{ fontSize: '0.65rem', color: 'rgba(244,231,213,0.4)', marginTop: '0.1rem' }}>Enter your most recent crops, starting from the latest</p>
@@ -231,7 +231,7 @@ const Setup = () => {
         {/* ── Section 2: Fertilizers ──────────────────────────────────── */}
         <div style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-            <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: 'inherit' }}>02</div>
+            <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: '"Alfa Slab One", cursive' }}>02</div>
             <div>
               <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Fertilizers Used</p>
               <p style={{ fontSize: '0.65rem', color: 'rgba(244,231,213,0.4)', marginTop: '0.1rem' }}>Inputs from the last 12 months</p>
