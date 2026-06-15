@@ -18,7 +18,7 @@ const Login = () => {
 
     const result = await login(username, password);
     if (result.success) {
-      navigate('/language-select');
+      navigate('/setup');
     } else {
       setError(result.error);
       setLoading(false);
