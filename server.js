@@ -21,12 +21,13 @@ if (MONGODB_URI) {
   console.warn('⚠️  MONGODB_URI not set — profile persistence disabled');
 }
 
-// UserProfile schema — one document per username, upserted on save
+// UserProfile schema — one document per username (source of truth for auth + farm data)
 const userProfileSchema = new mongoose.Schema({
   username:    { type: String, required: true, unique: true, lowercase: true, trim: true },
-  farmerName:  { type: String, default: '' },
-  crops:       { type: Array,  default: [] },
-  fertilizers: { type: Array,  default: [] },
+  password:    { type: String, required: true },
+  lastDevice:  { type: String, default: null },
+  crops:       { type: Array,  default: [] },   // [{ id, name, dateGrown }]
+  fertilizers: { type: Array,  default: [] },   // [{ id, name, amount, unit }]
   updatedAt:   { type: Date,   default: Date.now }
 });
 
@@ -575,11 +576,53 @@ app.get("/api/devices", (req, res) => {
   });
 });
 
-// ─── Profile Endpoints ────────────────────────────────────────────────────────
+// ─── Auth + Profile Endpoints ─────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/login
+ * - New username → auto-register and log in
+ * - Existing username + correct password → log in
+ * - Existing username + wrong password → 401 error
+ */
+app.post("/api/auth/login", async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ error: 'Database not connected' });
+  }
+  try {
+    const { username, password } = req.body || {};
+    if (!username || !username.trim()) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+    const u = username.toLowerCase().trim();
+    const existing = await UserProfile.findOne({ username: u });
+
+    if (!existing) {
+      // New user — create account
+      await UserProfile.create({ username: u, password, crops: [], fertilizers: [], lastDevice: null });
+      console.log(`✅ New user registered: ${u}`);
+      return res.json({ success: true, created: true, username: u });
+    }
+
+    // Existing user — verify password
+    if (existing.password !== password) {
+      console.log(`❌ Wrong password for: ${u}`);
+      return res.status(401).json({ success: false, error: 'Incorrect password' });
+    }
+
+    console.log(`✅ User logged in: ${u}`);
+    return res.json({ success: true, created: false, username: u });
+  } catch (err) {
+    console.error('❌ POST /api/auth/login error:', err.message);
+    res.status(500).json({ error: 'Auth failed' });
+  }
+});
 
 /**
  * GET /api/profile/:username
- * Load a farmer's profile from MongoDB.
+ * Returns lastDevice, crops, fertilizers for the given user.
  */
 app.get("/api/profile/:username", async (req, res) => {
   if (mongoose.connection.readyState !== 1) {
@@ -593,7 +636,7 @@ app.get("/api/profile/:username", async (req, res) => {
     }
     res.json({
       username:    profile.username,
-      farmerName:  profile.farmerName,
+      lastDevice:  profile.lastDevice,
       crops:       profile.crops,
       fertilizers: profile.fertilizers,
       updatedAt:   profile.updatedAt
@@ -606,31 +649,35 @@ app.get("/api/profile/:username", async (req, res) => {
 
 /**
  * POST /api/profile
- * Upsert (create or update) a farmer's profile in MongoDB.
- * Body: { username, farmerName, crops, fertilizers }
+ * Saves crops, fertilizers, and optionally lastDevice for a user.
+ * Body: { username, crops, fertilizers, lastDevice? }
  */
 app.post("/api/profile", async (req, res) => {
   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({ error: 'Database not connected' });
   }
   try {
-    const { username, farmerName, crops, fertilizers } = req.body || {};
+    const { username, crops, fertilizers, lastDevice } = req.body || {};
     if (!username) {
       return res.status(400).json({ error: 'username is required' });
     }
     const u = username.toLowerCase().trim();
+    const updateFields = {
+      crops:       Array.isArray(crops)       ? crops       : [],
+      fertilizers: Array.isArray(fertilizers) ? fertilizers : [],
+      updatedAt:   new Date()
+    };
+    if (lastDevice !== undefined) updateFields.lastDevice = lastDevice;
+
     const profile = await UserProfile.findOneAndUpdate(
       { username: u },
-      {
-        username: u,
-        farmerName: farmerName || '',
-        crops: Array.isArray(crops) ? crops : [],
-        fertilizers: Array.isArray(fertilizers) ? fertilizers : [],
-        updatedAt: new Date()
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { $set: updateFields },
+      { new: true }
     );
-    console.log(`✅ Profile saved for user: ${u}`);
+    if (!profile) {
+      return res.status(404).json({ error: 'User not found. Login first.' });
+    }
+    console.log(`✅ Profile saved for: ${u}`);
     res.json({ success: true, updatedAt: profile.updatedAt });
   } catch (err) {
     console.error('❌ POST /api/profile error:', err.message);

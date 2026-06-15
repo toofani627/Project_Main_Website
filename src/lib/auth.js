@@ -1,60 +1,48 @@
 const SESSION_KEY = 'agri_session';
-const USERS_KEY = 'agri_users';
 
-// Initialize hardcoded user "vaibhav" with password "qwerty"
-function initUsers() {
-  let users = {};
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    if (raw) users = JSON.parse(raw);
-  } catch {}
-  
-  if (!users['vaibhav']) {
-    users['vaibhav'] = 'qwerty';
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
-}
-initUsers();
+const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001';
 
 /**
- * Attempt login. 
- * - If username doesn't exist, create it with the provided password.
- * - If username exists, verify password.
- * Returns { success, error }
+ * Attempt login / registration via the server.
+ * - If username doesn't exist → auto-registers and logs in.
+ * - If username exists + correct password → logs in.
+ * - If username exists + wrong password → returns error.
+ * Returns { success, error? }
  */
-export function login(username, password) {
-  if (!username.trim()) {
+export async function login(username, password) {
+  if (!username || !username.trim()) {
     return { success: false, error: 'Please enter a username.' };
   }
   if (!password) {
     return { success: false, error: 'Please enter a password.' };
   }
 
-  const u = username.trim().toLowerCase();
-  
-  let users = {};
   try {
-    const raw = localStorage.getItem(USERS_KEY);
-    if (raw) users = JSON.parse(raw);
-  } catch {}
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username.trim(), password })
+    });
 
-  if (!users[u]) {
-    // New user -> register
-    users[u] = password;
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  } else {
-    // Existing user -> check password
-    if (users[u] !== password) {
-      return { success: false, error: 'Incorrect password.' };
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Login failed.' };
     }
-  }
 
-  const session = {
-    username: username.trim(), // Keep original casing for display
-    loginTime: new Date().toISOString(),
-  };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  return { success: true };
+    // Store a lightweight session token in localStorage
+    const session = {
+      username: data.username,           // normalized (lowercase)
+      displayName: username.trim(),      // original casing for display
+      loginTime: new Date().toISOString()
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    return { success: true, created: data.created };
+
+  } catch (err) {
+    console.error('Login network error:', err);
+    return { success: false, error: 'Cannot reach server. Check your connection.' };
+  }
 }
 
 /**
@@ -77,11 +65,10 @@ export function logout() {
 }
 
 /**
- * Helper to get the current user's profile key
+ * Helper to get the current user's localStorage cache key.
  */
 export function getProfileKey() {
   const session = getSession();
   if (!session) return 'farmerProfile';
-  return `farmerProfile_${session.username.toLowerCase()}`;
+  return `farmerProfile_${session.username}`;
 }
-

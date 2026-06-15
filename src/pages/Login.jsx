@@ -11,23 +11,20 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Small delay for feel
-    setTimeout(() => {
-      const result = login(username, password);
-      if (result.success) {
-        navigate('/language-select');
-      } else {
-        setError(result.error);
-        setLoading(false);
-        setShake(true);
-        setTimeout(() => setShake(false), 500);
-      }
-    }, 400);
+    const result = await login(username, password);
+    if (result.success) {
+      navigate('/language-select');
+    } else {
+      setError(result.error);
+      setLoading(false);
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    }
   };
 
   return (
@@ -154,7 +151,7 @@ const Login = () => {
 
         {/* Hint */}
         <p className="text-center font-body text-neo-cream/20 text-[11px] mt-8 uppercase tracking-widest">
-          Any name · password: qwerty
+          New username? A new account will be created automatically.
         </p>
       </div>
 
