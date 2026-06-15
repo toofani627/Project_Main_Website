@@ -35,54 +35,111 @@ const Profile = () => {
   // UI state
   const [saveMessage, setSaveMessage] = useState('');
   const [showSaveMessage, setShowSaveMessage] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleLanguageSwitch = () => {
     changeLanguage(null);
     localStorage.removeItem('language');
   };
 
-  // Load profile from localStorage on mount
+  // Load profile: try MongoDB first, fall back to localStorage
   useEffect(() => {
-    const profileKey = getProfileKey();
-    const savedProfile = localStorage.getItem(profileKey);
-    
-    // Always initialize name from session if available (can be overwritten by savedProfile)
     const session = getSession();
-    if (session && session.username) {
+    if (session?.username) {
       setFarmerName(session.username);
     }
 
-    if (savedProfile) {
-      try {
-        const profile = JSON.parse(savedProfile);
-        if (profile.farmerName) setFarmerName(profile.farmerName);
-        if (Array.isArray(profile.crops) && profile.crops.length > 0) {
-          setCrops(profile.crops);
-          const maxCropId = Math.max(...profile.crops.map(c => c.id || 0));
-          setNextCropId(maxCropId + 1);
+    const loadProfile = async () => {
+      setIsLoading(true);
+      const session = getSession();
+      const username = session?.username;
+
+      // Try API first
+      if (username) {
+        try {
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+          const res = await fetch(`${apiUrl}/api/profile/${encodeURIComponent(username.toLowerCase())}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.farmerName) setFarmerName(data.farmerName);
+            if (Array.isArray(data.crops) && data.crops.length > 0) {
+              setCrops(data.crops);
+              setNextCropId(Math.max(...data.crops.map(c => c.id || 0)) + 1);
+            }
+            if (Array.isArray(data.fertilizers) && data.fertilizers.length > 0) {
+              setFertilizers(data.fertilizers);
+              setNextFertilizerId(Math.max(...data.fertilizers.map(f => f.id || 0)) + 1);
+            }
+            setIsLoading(false);
+            return; // MongoDB load succeeded — skip localStorage
+          }
+        } catch (err) {
+          console.warn('Could not load profile from API, falling back to localStorage:', err.message);
         }
-        if (Array.isArray(profile.fertilizers) && profile.fertilizers.length > 0) {
-          setFertilizers(profile.fertilizers);
-          const maxFertilizerId = Math.max(...profile.fertilizers.map(f => f.id || 0));
-          setNextFertilizerId(maxFertilizerId + 1);
-        }
-      } catch (err) {
-        console.error('Error loading profile from localStorage:', err);
       }
-    }
+
+      // Fallback: localStorage
+      const profileKey = getProfileKey();
+      const savedProfile = localStorage.getItem(profileKey);
+      if (savedProfile) {
+        try {
+          const profile = JSON.parse(savedProfile);
+          if (profile.farmerName) setFarmerName(profile.farmerName);
+          if (Array.isArray(profile.crops) && profile.crops.length > 0) {
+            setCrops(profile.crops);
+            setNextCropId(Math.max(...profile.crops.map(c => c.id || 0)) + 1);
+          }
+          if (Array.isArray(profile.fertilizers) && profile.fertilizers.length > 0) {
+            setFertilizers(profile.fertilizers);
+            setNextFertilizerId(Math.max(...profile.fertilizers.map(f => f.id || 0)) + 1);
+          }
+        } catch (err) {
+          console.error('Error loading profile from localStorage:', err);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    loadProfile();
   }, []);
 
-  // Save profile to localStorage
-  const handleSaveProfile = () => {
+  // Save profile: POST to MongoDB, also write localStorage as cache
+  const handleSaveProfile = async () => {
+    const session = getSession();
+    const username = session?.username;
+
     const profile = {
       farmerName: farmerName.trim(),
       crops: crops.filter(c => c.name.trim() !== ''),
       fertilizers: fertilizers.filter(f => f.name.trim() !== '')
     };
 
+    // Always write localStorage cache
     const profileKey = getProfileKey();
     localStorage.setItem(profileKey, JSON.stringify(profile));
 
+    // Try saving to MongoDB
+    if (username) {
+      setIsSaving(true);
+      setSaveError(false);
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const res = await fetch(`${apiUrl}/api/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, ...profile })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setSaveError(false);
+      } catch (err) {
+        console.error('Failed to save profile to MongoDB:', err.message);
+        setSaveError(true);
+      } finally {
+        setIsSaving(false);
+      }
+    }
 
     setSaveMessage(
       language === 'hi'
@@ -133,6 +190,20 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-transparent text-neo-cream">
       <div className="container mx-auto px-4 sm:px-6 py-8 max-w-2xl">
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-2 border-neo-cream/30 border-t-neo-cream rounded-full animate-spin" />
+              <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/50">
+                {language === 'hi' ? 'प्रोफाइल लोड हो रहा है...' : 'Loading profile...'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && (<>
 
         {/* Page Header */}
         <div className="mb-10 border-b border-neo-cream/20 pb-6">
@@ -357,22 +428,31 @@ const Profile = () => {
         {/* Save Button */}
         <button
           onClick={handleSaveProfile}
-          className="w-full font-heading uppercase text-neo-cream text-xl py-5 rounded-2xl border-2 bg-neo-green-dark border-neo-cream shadow-[6px_6px_0px_#F4E7D5] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[3px_3px_0px_#F4E7D5] transition-all duration-200 active:scale-95"
+          disabled={isSaving}
+          className="w-full font-heading uppercase text-neo-cream text-xl py-5 rounded-2xl border-2 bg-neo-green-dark border-neo-cream shadow-[6px_6px_0px_#F4E7D5] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[3px_3px_0px_#F4E7D5] transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0"
           style={{backgroundImage:'none'}}
         >
-          {language === 'en' ? 'SAVE PROFILE & CONTINUE' : language === 'hi' ? 'प्रोफाइल सेव करें' : 'விவரம் சேமிக்கவும்'}
+          {isSaving
+            ? (language === 'hi' ? 'सेव हो रहा है...' : 'Saving...')
+            : (language === 'en' ? 'SAVE PROFILE & CONTINUE' : language === 'hi' ? 'प्रोफाइल सेव करें' : 'விவரம் சேமிக்கவும்')}
         </button>
 
         {showSaveMessage && (
-          <div className="mt-4 border-2 border-neo-green-dark text-neo-green-light px-4 py-3 rounded-xl text-center font-subheading font-bold text-sm uppercase tracking-widest animate-pulse" style={{backgroundColor:'rgba(21,122,38,0.15)', backgroundImage:'none'}}>
-            {saveMessage}
+          <div
+            className={`mt-4 border-2 px-4 py-3 rounded-xl text-center font-subheading font-bold text-sm uppercase tracking-widest animate-pulse ${saveError ? 'border-red-500 text-red-400' : 'border-neo-green-dark text-neo-green-light'}`}
+            style={{backgroundColor: saveError ? 'rgba(239,68,68,0.1)' : 'rgba(21,122,38,0.15)', backgroundImage:'none'}}
+          >
+            {saveError
+              ? (language === 'hi' ? 'सर्वर से कनेक्ट नहीं हो सका — स्थानीय रूप से सेव किया गया' : 'Server unavailable — saved locally')
+              : saveMessage}
           </div>
         )}
 
         <p className="text-center font-body text-neo-cream/25 text-xs mt-6">
-          {language === 'en' ? 'Your data is stored locally and attached to your profile.' : language === 'hi' ? 'आपका डेटा स्थानीय रूप से संग्रहीत है।' : 'உங்கள் தரவு உள்ளூரில் சேமிக்கப்படுகிறது.'}
+          {language === 'en' ? 'Your data is synced to the cloud and stored locally as backup.' : language === 'hi' ? 'आपका डेटा क्लाउड में सिंक होता है और स्थानीय रूप से बैकअप रहता है।' : 'உங்கள் தரவு கிளவுட்டில் ஒத்திசைக்கப்படுகிறது.'}
         </p>
 
+      </>) }
       </div>
     </div>
   );

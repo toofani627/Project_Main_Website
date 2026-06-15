@@ -6,8 +6,32 @@ import { WebSocketServer } from "ws";
 import http from "http";
 import fetch from "node-fetch";
 import cors from "cors";
+import mongoose from "mongoose";
 
 dotenv.config();
+
+// ─── MongoDB Connection ───────────────────────────────────────────────────────
+const MONGODB_URI = process.env.MONGODB_URI || '';
+
+if (MONGODB_URI) {
+  mongoose.connect(MONGODB_URI)
+    .then(() => console.log('✅ Connected to MongoDB Atlas'))
+    .catch((err) => console.error('❌ MongoDB connection error:', err.message));
+} else {
+  console.warn('⚠️  MONGODB_URI not set — profile persistence disabled');
+}
+
+// UserProfile schema — one document per username, upserted on save
+const userProfileSchema = new mongoose.Schema({
+  username:    { type: String, required: true, unique: true, lowercase: true, trim: true },
+  farmerName:  { type: String, default: '' },
+  crops:       { type: Array,  default: [] },
+  fertilizers: { type: Array,  default: [] },
+  updatedAt:   { type: Date,   default: Date.now }
+});
+
+const UserProfile = mongoose.model('UserProfile', userProfileSchema);
+// ──────────────────────────────────────────────────────────────────────────────
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -550,6 +574,70 @@ app.get("/api/devices", (req, res) => {
     devices: devices
   });
 });
+
+// ─── Profile Endpoints ────────────────────────────────────────────────────────
+
+/**
+ * GET /api/profile/:username
+ * Load a farmer's profile from MongoDB.
+ */
+app.get("/api/profile/:username", async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ error: 'Database not connected' });
+  }
+  try {
+    const username = req.params.username.toLowerCase().trim();
+    const profile = await UserProfile.findOne({ username });
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    res.json({
+      username:    profile.username,
+      farmerName:  profile.farmerName,
+      crops:       profile.crops,
+      fertilizers: profile.fertilizers,
+      updatedAt:   profile.updatedAt
+    });
+  } catch (err) {
+    console.error('❌ GET /api/profile error:', err.message);
+    res.status(500).json({ error: 'Failed to load profile' });
+  }
+});
+
+/**
+ * POST /api/profile
+ * Upsert (create or update) a farmer's profile in MongoDB.
+ * Body: { username, farmerName, crops, fertilizers }
+ */
+app.post("/api/profile", async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ error: 'Database not connected' });
+  }
+  try {
+    const { username, farmerName, crops, fertilizers } = req.body || {};
+    if (!username) {
+      return res.status(400).json({ error: 'username is required' });
+    }
+    const u = username.toLowerCase().trim();
+    const profile = await UserProfile.findOneAndUpdate(
+      { username: u },
+      {
+        username: u,
+        farmerName: farmerName || '',
+        crops: Array.isArray(crops) ? crops : [],
+        fertilizers: Array.isArray(fertilizers) ? fertilizers : [],
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    console.log(`✅ Profile saved for user: ${u}`);
+    res.json({ success: true, updatedAt: profile.updatedAt });
+  } catch (err) {
+    console.error('❌ POST /api/profile error:', err.message);
+    res.status(500).json({ error: 'Failed to save profile' });
+  }
+});
+// ──────────────────────────────────────────────────────────────────────────────
 
 const callAgritechModel = async (messages) => {
   if (!azureAiEndpoint || !azureAiKey) {
