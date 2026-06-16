@@ -49,7 +49,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 const azureAiEndpoint = process.env.AZURE_PHI4_ENDPOINT || "";
 const azureAiKey = process.env.AZURE_PHI4_API_KEY || "";
@@ -452,7 +452,7 @@ wss.on('connection', (ws, req) => {
 });
 
 // Middleware to parse JSON
-app.use(cors());
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'], credentials: true }));
 app.use(express.json());
 
 // ========================================
