@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getSession } from '../lib/auth';
 import { useLanguage } from '../context/LanguageContext';
 
-const API_URL = import.meta.env?.VITE_API_URL || '';
+const API_URL = "";
 
 /**
  * Setup — shown once after first login.
