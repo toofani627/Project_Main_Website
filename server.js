@@ -67,9 +67,9 @@ const buildAgriSystemPrompt = (language) => {
 
 Your task is to analyze real soil moisture, synthesized soil chemistry (N/P/K, pH, EC), ${WEATHER_HISTORICAL_DAYS}-day weather history, ${WEATHER_FORECAST_DAYS}-day forecast, farm rotation history, and the farmer's current crop context.
 
-🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT. Do not wrap it in markdown codeblocks (like \`\`\`json ... \`\`\`). Only return raw JSON.
+🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT. Do not wrap it in markdown codeblocks. Only return raw JSON. KEEP YOUR TEXT EXTREMELY CONCISE to ensure fast processing!
 
-${isHindi ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO HINDI (हिन्दी). The JSON keys must remain in English.` : isTamil ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO TAMIL (தமிழ்). The JSON keys must remain in English.` : `All text values must be in English.`}
+${isHindi ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO HINDI (हिन्दी). The JSON keys must remain in English.` : isTamil ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO TAMIL (தமிழ்). The JSON keys must remain in English. Keep Tamil translations short and direct.` : `All text values must be in English.`}
 
 JSON Structure:
 {
@@ -305,9 +305,9 @@ const buildCompanionSystemPrompt = (language) => {
 Your task is to recommend the best companion crop to plant alongside the farmer's current crop during its specific growth stage.
 You must analyze the crop and its growth stage to provide a scientifically sound, beneficial companion planting recommendation.
 
-🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT containing EXACTLY these four keys. Do not wrap it in markdown codeblocks (like \`\`\`json ... \`\`\`). Only return raw JSON.
+🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT containing EXACTLY these four keys. Do not wrap it in markdown codeblocks. Only return raw JSON. KEEP YOUR RESPONSE EXTREMELY SHORT AND CONCISE (Under 20 words per reason/benefit).
 
-${isHindi ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO HINDI (हिन्दी). The JSON keys must remain in English.` : isTamil ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO TAMIL (தமிழ்). The JSON keys must remain in English.` : `All text values must be in English.`}
+${isHindi ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO HINDI (हिन्दी). The JSON keys must remain in English.` : isTamil ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO TAMIL (தமிழ்). The JSON keys must remain in English. Keep Tamil translations short and direct.` : `All text values must be in English.`}
 
 JSON Structure:
 {
@@ -738,8 +738,8 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
       },
       body: JSON.stringify({
         messages,
-        temperature: 0.7,
-        max_tokens: 3000
+        temperature: 0.3,
+        max_tokens: 1500
       }),
       signal: controller.signal
     });
@@ -755,12 +755,19 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
     const result = await response.json();
     console.log('Azure AI raw response structure:', JSON.stringify(result, null, 2).substring(0, 500));
     
-    const directContent = result?.output?.[0]?.content?.[0]?.text || result?.choices?.[0]?.message?.content;
+    let directContent = result?.output?.[0]?.content?.[0]?.text || result?.choices?.[0]?.message?.content;
 
     if (!directContent) {
       console.error('❌ Unexpected response format:', JSON.stringify(result, null, 2));
       throw new Error("Azure AI returned an unexpected response format");
     }
+
+    // Auto-clean markdown json wrapping if the model accidentally includes it
+    directContent = directContent.trim();
+    if (directContent.startsWith("```json")) directContent = directContent.substring(7);
+    else if (directContent.startsWith("```")) directContent = directContent.substring(3);
+    if (directContent.endsWith("```")) directContent = directContent.substring(0, directContent.length - 3);
+    directContent = directContent.trim();
 
     console.log(`✅ AI response extracted (${directContent.length} chars)`);
 
