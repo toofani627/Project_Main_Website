@@ -329,7 +329,7 @@ const translations = {
     tableDevice: 'डिवाइस',
     tableTemp: 'तापमान',
     tableHumid: 'नमी',
-    tableSoil: 'नमी',
+    tableSoil: 'मिट्टी नमी',
     tableN: 'N',
     tableP: 'P',
     tableK: 'K',

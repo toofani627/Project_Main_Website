@@ -1233,8 +1233,8 @@ const AIAnalysis = () => {
                   <table className="w-full text-xs font-body">
                     <thead>
                       <tr style={{backgroundColor:'var(--color-table-1)'}} className="text-neo-cream/60 uppercase tracking-wide">
-                        {[t('tableDevice'), t('tableTemp'), t('tableHumid'), t('tableSoil'), t('tableN'), t('tableP'), t('tableK'), t('tablePh'), t('tableTime')].map(h => (
-                          <th key={h} className="px-4 py-3 text-left font-subheading whitespace-nowrap border-b border-neo-cream/10">{h}</th>
+                        {[t('tableDevice'), t('tableTemp'), t('tableHumid'), t('tableSoil'), t('tableN'), t('tableP'), t('tableK'), t('tablePh'), t('tableTime')].map((h, i) => (
+                          <th key={i} className="px-4 py-3 text-left font-subheading whitespace-nowrap border-b border-neo-cream/10">{h}</th>
                         ))}
                       </tr>
 
