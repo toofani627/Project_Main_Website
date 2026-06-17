@@ -252,22 +252,16 @@ const Layout = () => {
           style={{ backgroundColor: 'var(--color-neo-surface)', backgroundImage: 'none' }}
           aria-label="Open settings"
         >
-          {/* Theme/Lang Indicator in Side Pull Tab */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleTheme();
-            }}
-            className="flex flex-col items-center gap-1"
-          >
-            <span className="font-subheading font-bold text-[9px] text-neo-cream leading-none">
-              {theme === 'dark' ? 'DARK' : 'LIGHT'}
-            </span>
-            <div className="w-4 h-0.5 bg-neo-cream/30 rounded-full" />
+          {/* Small lang indicator */}
+          <div className="flex flex-col items-center gap-1">
             <span className="font-subheading font-bold text-[9px] text-neo-cream leading-none">
               {(language || 'EN').toUpperCase()}
             </span>
-          </button>
+            <div className="w-3 h-0.5 bg-neo-cream/40 rounded"/>
+            <svg viewBox="0 0 12 12" className="w-3 h-3 text-neo-cream/60" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="8 2 4 6 8 10"/>
+            </svg>
+          </div>
         </button>
       )}
 
