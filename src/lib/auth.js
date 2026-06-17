@@ -17,32 +17,18 @@ export async function login(username, password) {
     return { success: false, error: 'Please enter a password.' };
   }
 
-  try {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.trim(), password })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      return { success: false, error: data.error || 'Login failed.' };
-    }
-
-    // Store a lightweight session token in localStorage
-    const session = {
-      username: data.username,           // normalized (lowercase)
-      displayName: username.trim(),      // original casing for display
-      loginTime: new Date().toISOString()
-    };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    return { success: true, created: data.created };
-
-  } catch (err) {
-    console.error('Login network error:', err);
-    return { success: false, error: 'Cannot reach server. Check your connection.' };
-  }
+  // TEMPORARY BYPASS: Simulate successful login without hitting the database
+  const u = username.trim().toLowerCase();
+  const session = {
+    username: u,
+    displayName: username.trim(),
+    loginTime: new Date().toISOString()
+  };
+  
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  console.log(`✅ Simulated login for: ${u}`);
+  
+  return { success: true, created: false };
 }
 
 /**
