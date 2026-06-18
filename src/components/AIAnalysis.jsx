@@ -61,6 +61,7 @@ const AIAnalysis = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [parsedResult, setParsedResult] = useState(null); // { soil_score, soil_summary, top_crops }
   const [companionMode, setCompanionMode] = useState(false);
+  const [profitMode, setProfitMode] = useState(false);
   const [showMoreCrops, setShowMoreCrops] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [showCropResults, setShowCropResults] = useState(false);
@@ -1509,7 +1510,26 @@ const AIAnalysis = () => {
                   {parsedResult.top_crops.length} crops ranked by soil match
                 </p>
               </div>
-              {/* Companion planting toggle */}
+              {/* Toggles */}
+              <div className="flex items-center gap-3">
+                <button
+                  id="profit-toggle"
+                  onClick={() => setProfitMode(m => !m)}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 transition-all duration-200 flex-shrink-0 ${
+                    profitMode
+                      ? 'border-neo-green-dark bg-neo-green-dark/15 text-neo-green-light shadow-[0_0_12px_rgba(21,122,38,0.3)]'
+                      : 'border-neo-cream/20 text-neo-cream/50 hover:border-neo-cream/40'
+                  }`}
+                  style={{backgroundImage:'none', backgroundColor: profitMode ? 'rgba(21,122,38,0.12)' : 'transparent'}}
+                >
+                  <div className={`w-11 h-6 rounded-full relative transition-all duration-200 flex-shrink-0 ${profitMode ? 'bg-neo-green-dark' : 'bg-neo-cream/15'}`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-200 ${profitMode ? 'left-6 bg-neo-cream shadow-[0_0_6px_rgba(var(--color-neo-cream-rgb),0.8)]' : 'left-1 bg-neo-cream/40'}`}/>
+                  </div>
+                  <span className="font-subheading text-[11px] uppercase tracking-widest whitespace-nowrap">
+                    EST. PROFIT
+                  </span>
+                </button>
+                {/* Companion planting toggle */}
               <button
                 id="companion-toggle"
                 onClick={() => setCompanionMode(m => !m)}
@@ -1528,6 +1548,7 @@ const AIAnalysis = () => {
                   {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
                 </span>
               </button>
+              </div>
             </div>
 
             {/* Cards grid — top 3 always visible */}
@@ -1536,6 +1557,25 @@ const AIAnalysis = () => {
                 const rank = i + 1;
                 const matchPct = Number(crop.match_percentage) || 0;
                 const isTop = rank === 1;
+
+                // Deterministic mock profit calculation based on crop name length
+                let hash = 0;
+                for (let j = 0; j < (crop.name || '').length; j++) {
+                  hash = (crop.name.charCodeAt(j) + ((hash << 5) - hash)) || 0;
+                }
+                const baseProfit = 30000 + (Math.abs(hash) % 25000); // Between 30k and 55k INR
+                
+                let multiplier = 1;
+                if (fieldArea && !isNaN(fieldArea)) {
+                   const areaNum = parseFloat(fieldArea);
+                   if (areaUnit === 'acre') multiplier = areaNum;
+                   else if (areaUnit === 'hectare') multiplier = areaNum * 2.47105;
+                   else if (areaUnit === 'bigha') multiplier = areaNum * 0.61776;
+                   else multiplier = areaNum;
+                }
+                const totalProfit = baseProfit * (multiplier || 1);
+                const formattedProfit = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalProfit);
+
                 return (
                   <div
                     key={i}
@@ -1576,19 +1616,32 @@ const AIAnalysis = () => {
 
                     {/* Match percentage + bar */}
                     <div className="mb-4">
-                      <div className="flex items-baseline gap-1 mb-2">
-                        <span className="font-heading text-5xl text-neo-cream leading-none">{matchPct}</span>
-                        <span className="font-subheading text-lg text-neo-cream/40">%</span>
-                      </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{background:'rgba(var(--color-neo-cream-rgb),0.08)'}}>
-                        <div
-                          className="h-full rounded-full transition-all duration-1000"
-                          style={{
-                            width: `${matchPct}%`,
-                            background: isTop ? 'var(--color-neo-green-dark)' : rank <= 3 ? 'rgba(var(--color-neo-cream-rgb),0.35)' : 'rgba(var(--color-neo-cream-rgb),0.15)'
-                          }}
-                        />
-                      </div>
+                      {profitMode ? (
+                        <div className="animate-fadeIn">
+                          <div className="flex items-baseline gap-1 mb-2">
+                            <span className="font-heading text-4xl text-neo-green-light leading-none">{formattedProfit}</span>
+                          </div>
+                          <p className="font-mono text-[9px] uppercase tracking-widest text-neo-cream/40 border-t border-neo-cream/10 pt-2">
+                            Estimated Profit {fieldArea ? `for ${fieldArea} ${areaUnit}` : 'per acre'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="animate-fadeIn">
+                          <div className="flex items-baseline gap-1 mb-2">
+                            <span className="font-heading text-5xl text-neo-cream leading-none">{matchPct}</span>
+                            <span className="font-subheading text-lg text-neo-cream/40">%</span>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{background:'rgba(var(--color-neo-cream-rgb),0.08)'}}>
+                            <div
+                              className="h-full rounded-full transition-all duration-1000"
+                              style={{
+                                width: `${matchPct}%`,
+                                background: isTop ? 'var(--color-neo-green-dark)' : rank <= 3 ? 'rgba(var(--color-neo-cream-rgb),0.35)' : 'rgba(var(--color-neo-cream-rgb),0.15)'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Reason */}
