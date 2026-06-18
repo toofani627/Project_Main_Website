@@ -236,6 +236,14 @@ const AnalysisResults = () => {
           </div>
         )}
 
+        {/* ── AI RECOMMENDATION BOX ────────────────────────────────────── */}
+        {showResults && parsedResult && parsedResult.soil_summary && (
+          <div className="neo-card border-2 border-neo-cream rounded-2xl p-6 mb-6 animate-fadeIn">
+            <h3 className="font-heading text-xl text-neo-cream uppercase mb-3">AI RECOMMENDATION</h3>
+            <p className="font-body text-neo-cream/70 text-sm leading-relaxed whitespace-pre-wrap">{parsedResult.soil_summary}</p>
+          </div>
+        )}
+
         {/* ── TOP 3 CROP CARDS ───────────────────────────────────────── */}
         {showResults && parsedResult?.top_crops?.length > 0 && (
           <div className="mb-6 animate-fadeIn">
@@ -330,12 +338,16 @@ const AnalysisResults = () => {
 
                     {/* Crop name */}
                     <div className="pr-10 mb-4">
-                      <p className={`font-heading text-2xl leading-none mb-0.5 ${isTop ? 'text-neo-green-light' : 'text-neo-cream'}`}>
-                        {crop.name}
-                      </p>
-                      {isTop && (
-                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-neo-green-dark">★ BEST MATCH</span>
-                      )}
+                      <div className="flex items-center gap-3 mb-0.5">
+                        <p className={`font-heading text-2xl leading-none ${isTop ? 'text-neo-green-light' : 'text-neo-cream'}`}>
+                          {crop.name}
+                        </p>
+                        {isTop && (
+                          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-neo-green-dark bg-neo-green-dark/10 px-2 py-0.5 rounded-sm">
+                            ★ BEST MATCH
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Match % + bar OR Profit */}
@@ -485,14 +497,6 @@ const AnalysisResults = () => {
           </div>
         )}
 
-        {/* Fallback plain text */}
-        {showResults && parsedResult && (!parsedResult.top_crops || parsedResult.top_crops.length === 0) && parsedResult.soil_summary && (
-          <div className="neo-card border-2 border-neo-cream rounded-2xl p-6 mb-6 animate-fadeIn">
-            <h3 className="font-heading text-xl text-neo-cream uppercase mb-3">AI RECOMMENDATION</h3>
-            <p className="font-body text-neo-cream/70 text-sm leading-relaxed">{parsedResult.soil_summary}</p>
-          </div>
-        )}
-
         {/* ── SOIL HEALTH SCORE ──────────────────────────────────────── */}
         {showResults && parsedResult?.soil_score != null && (
           <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6 mb-6 animate-fadeIn">
@@ -533,11 +537,6 @@ const AnalysisResults = () => {
               <span className="font-mono text-[9px] text-neo-cream/20 uppercase">Good</span>
               <span className="font-mono text-[9px] text-neo-cream/20 uppercase">100</span>
             </div>
-            {parsedResult.soil_summary && (
-              <p className="font-body text-neo-cream/60 text-sm leading-relaxed border-t border-neo-cream/10 pt-4">
-                {parsedResult.soil_summary}
-              </p>
-            )}
           </div>
         )}
 
