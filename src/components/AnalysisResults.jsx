@@ -295,6 +295,8 @@ const AnalysisResults = () => {
               {parsedResult.top_crops.slice(0, 3).map((crop, i) => {
                 const rank = i + 1;
                 const matchPct = Number(crop.match_percentage) || 0;
+                const isTop = rank === 1;
+                
                 // Deterministic mock profit calculation
                 let hash = 0;
                 for (let j = 0; j < (crop.name || '').length; j++) {
