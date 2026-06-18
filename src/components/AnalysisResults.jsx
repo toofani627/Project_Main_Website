@@ -412,7 +412,7 @@ const AnalysisResults = () => {
                   {language === 'hi' ? 'मृदा स्वास्थ्य स्कोर' : language === 'ta' ? 'மண் ஆரோக்கிய மதிப்பெண்' : 'SOIL HEALTH SCORE'}
                 </h3>
                 <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/35">
-                  Based on NPK · pH · EC · Moisture
+                  Based on NPK · pH · Moisture
                 </p>
               </div>
               <div className="flex items-baseline gap-1 flex-shrink-0">
