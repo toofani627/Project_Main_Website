@@ -873,7 +873,7 @@ const AIAnalysis = () => {
               <p className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream">
                 {t('npkLevels')}
               </p>
-              <span className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/50 bg-neo-surface-2 border border-neo-cream/20 px-2 py-1 rounded-md">{t('mockedData')}</span>
+
             </div>
             <div className="space-y-5">
               {[
