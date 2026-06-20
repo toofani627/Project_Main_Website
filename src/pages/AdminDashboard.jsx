@@ -58,12 +58,14 @@ const AdminDashboard = () => {
             </p>
             <div className="w-full max-w-lg aspect-square text-neo-cream/80 fill-current hover:text-neo-green-dark cursor-pointer transition-colors duration-300">
                <India
-                 onClick={handleStateClick}
+                 type="select-single"
+                 onSelect={handleStateClick}
                  size="100%"
                  mapColor="var(--color-neo-surface-2)"
                  strokeColor="var(--color-neo-cream)"
                  strokeWidth="1"
                  hoverColor="var(--color-neo-green-dark)"
+                 selectColor="var(--color-neo-green-dark)"
                />
             </div>
           </div>
