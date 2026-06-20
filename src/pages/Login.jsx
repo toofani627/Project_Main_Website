@@ -4,8 +4,13 @@ import { login } from '../lib/auth';
 
 const Login = () => {
   const navigate = useNavigate();
+  // modes: 'signin', 'signup', 'admin'
+  const [mode, setMode] = useState('signin');
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,43 +20,83 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
-    // Intercept Admin credentials from main login page
-    if (username === 'admin' && password === 'adminkapassword') {
-      localStorage.setItem('isAdminAuth', 'true');
-      navigate('/admin-dashboard');
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError('Passwords do not match.');
+      triggerShake();
+      return;
+    }
+
+    if (mode === 'admin') {
+      if (username === 'admin' && password === 'adminkapassword') {
+        localStorage.setItem('isAdminAuth', 'true');
+        navigate('/admin-dashboard');
+      } else {
+        setError('Invalid admin credentials.');
+        triggerShake();
+      }
       return;
     }
 
     setLoading(true);
-
+    // login function handles both signin and auto-signup on backend
     const result = await login(username, password);
     if (result.success) {
       navigate('/setup');
     } else {
       setError(result.error);
       setLoading(false);
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
+      triggerShake();
     }
   };
+
+  const triggerShake = () => {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+  };
+
+  const renderTabs = () => (
+    <div className="flex bg-neo-dark border-2 border-neo-cream rounded-xl mb-6 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => { setMode('signin'); setError(''); }}
+        className={`flex-1 py-2 font-subheading font-bold text-[10px] uppercase tracking-widest transition-colors ${mode === 'signin' ? 'bg-neo-green-dark text-neo-cream' : 'text-neo-cream/50 hover:text-neo-cream'}`}
+      >
+        Sign In
+      </button>
+      <div className="w-px bg-neo-cream border-l border-neo-cream"></div>
+      <button
+        type="button"
+        onClick={() => { setMode('signup'); setError(''); }}
+        className={`flex-1 py-2 font-subheading font-bold text-[10px] uppercase tracking-widest transition-colors ${mode === 'signup' ? 'bg-neo-green-dark text-neo-cream' : 'text-neo-cream/50 hover:text-neo-cream'}`}
+      >
+        Sign Up
+      </button>
+      <div className="w-px bg-neo-cream border-l border-neo-cream"></div>
+      <button
+        type="button"
+        onClick={() => { setMode('admin'); setError(''); }}
+        className={`flex-1 py-2 font-subheading font-bold text-[10px] uppercase tracking-widest transition-colors ${mode === 'admin' ? 'bg-neo-cream text-neo-dark' : 'text-neo-cream/50 hover:text-neo-cream'}`}
+      >
+        Admin
+      </button>
+    </div>
+  );
 
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
       style={{
         backgroundColor: 'var(--color-neo-dark)',
-        backgroundImage:
-          'linear-gradient(to right, rgba(var(--color-neo-cream-rgb),0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(var(--color-neo-cream-rgb),0.05) 1px, transparent 1px)',
+        backgroundImage: 'linear-gradient(to right, rgba(var(--color-neo-cream-rgb),0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(var(--color-neo-cream-rgb),0.05) 1px, transparent 1px)',
         backgroundSize: '30px 30px',
       }}
     >
-      {/* Card */}
       <div
         className={`w-full max-w-sm border-2 border-neo-cream rounded-3xl shadow-[8px_8px_0px_var(--color-neo-cream)] p-8 transition-transform ${shake ? 'animate-shake' : ''}`}
         style={{ backgroundColor: 'var(--color-neo-surface)', backgroundImage: 'none' }}
       >
         {/* Logo + title */}
-        <div className="mb-10 text-center">
+        <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
             <svg viewBox="0 0 24 24" className="w-8 h-8 text-neo-green-dark" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeOpacity="0.3"/>
@@ -60,12 +105,14 @@ const Login = () => {
             </svg>
           </div>
           <h1 className="font-heading text-4xl text-neo-cream uppercase leading-none mb-2">
-            FARMER LOGIN
+            {mode === 'admin' ? 'ADMIN LOGIN' : 'FARMER LOGIN'}
           </h1>
           <p className="font-body text-neo-cream/40 text-xs uppercase tracking-widest">
-            AgriIntelligence · Field Monitor
+            {mode === 'admin' ? 'Restricted Access' : 'AgriIntelligence · Field Monitor'}
           </p>
         </div>
+
+        {renderTabs()}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -73,7 +120,7 @@ const Login = () => {
           {/* Username */}
           <div>
             <label className="block font-subheading text-[11px] uppercase tracking-widest text-neo-cream/50 mb-2">
-              Full Name / Username
+              {mode === 'admin' ? 'Admin ID' : 'Username'}
             </label>
             <input
               id="login-username"
@@ -81,7 +128,7 @@ const Login = () => {
               autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. Rajesh Kumar"
+              placeholder={mode === 'admin' ? 'e.g. admin' : 'e.g. Rajesh Kumar'}
               className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
               style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
               required
@@ -97,7 +144,7 @@ const Login = () => {
               <input
                 id="login-password"
                 type={showPass ? 'text' : 'password'}
-                autoComplete="current-password"
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••"
@@ -127,6 +174,25 @@ const Login = () => {
             </div>
           </div>
 
+          {mode === 'signup' && (
+            <div>
+              <label className="block font-subheading text-[11px] uppercase tracking-widest text-neo-cream/50 mb-2">
+                Confirm Password
+              </label>
+              <input
+                id="login-confirm-password"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••"
+                className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
+                style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
+                required
+              />
+            </div>
+          )}
+
           {/* Error message */}
           {error && (
             <div
@@ -142,7 +208,7 @@ const Login = () => {
             id="login-submit"
             type="submit"
             disabled={loading}
-            className="w-full bg-neo-green-dark text-neo-cream border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_var(--color-neo-cream)] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_var(--color-neo-cream)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            className={`w-full ${mode === 'admin' ? 'bg-neo-cream text-neo-dark' : 'bg-neo-green-dark text-neo-cream'} border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_var(--color-neo-cream)] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_var(--color-neo-cream)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2`}
             style={{ backgroundImage: 'none' }}
           >
             {loading ? (
@@ -151,16 +217,13 @@ const Login = () => {
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3"/>
                   <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
                 </svg>
-                SIGNING IN...
+                PLEASE WAIT...
               </span>
-            ) : 'SIGN IN'}
+            ) : (
+              mode === 'signup' ? 'CREATE ACCOUNT' : 'SIGN IN'
+            )}
           </button>
         </form>
-
-        {/* Hint */}
-        <p className="text-center font-body text-neo-cream/20 text-[11px] mt-8 uppercase tracking-widest">
-          New username? A new account will be created automatically.
-        </p>
       </div>
 
       {/* Shake animation */}

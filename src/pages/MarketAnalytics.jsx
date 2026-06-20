@@ -11,13 +11,13 @@ const MarketAnalytics = () => {
   useEffect(() => {
     const isAuth = localStorage.getItem('isAdminAuth');
     if (!isAuth) {
-      navigate('/admin-login');
+      navigate('/login');
     }
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('isAdminAuth');
-    navigate('/admin-login');
+    navigate('/login');
   };
 
   return (
@@ -75,9 +75,9 @@ const MarketAnalytics = () => {
         </div>
 
         {/* ── CROP SELECTOR ──────────────────────────────────────── */}
-        <div className="mb-8 overflow-x-auto pb-4 hide-scrollbar">
-          <div className="flex gap-4 min-w-max">
-            {marketData.map((data) => {
+        <div className="mb-8 overflow-x-auto p-2 -m-2 hide-scrollbar">
+          <div className="flex gap-4 min-w-max items-center">
+            {marketData.slice(0, 4).map((data) => {
               const isActive = selectedCrop.crop === data.crop;
               return (
                 <button
@@ -86,13 +86,42 @@ const MarketAnalytics = () => {
                   className={`px-6 py-3 font-subheading font-bold text-sm uppercase tracking-widest transition-all duration-200 border-2 rounded-xl ${
                     isActive
                       ? 'bg-neo-green-dark text-neo-cream border-neo-cream shadow-[4px_4px_0px_var(--color-neo-cream)]'
-                      : 'text-neo-cream border-neo-cream shadow-[2px_2px_0px_var(--color-neo-cream)] hover:bg-neo-green-dark/20 hover:shadow-[4px_4px_0px_var(--color-neo-cream)] hover:-translate-y-0.5'
+                      : 'text-neo-cream border-neo-cream shadow-[2px_2px_0px_var(--color-neo-cream)] hover:bg-neo-green-dark/20 hover:shadow-[4px_4px_0px_var(--color-neo-cream)] hover:-translate-y-1'
                   }`}
                 >
                   {data.crop}
                 </button>
               );
             })}
+            
+            {/* "More" Dropdown */}
+            <div className="relative">
+              <select
+                className={`appearance-none cursor-pointer px-6 py-3 font-subheading font-bold text-sm uppercase tracking-widest transition-all duration-200 border-2 rounded-xl border-neo-cream shadow-[2px_2px_0px_var(--color-neo-cream)] hover:shadow-[4px_4px_0px_var(--color-neo-cream)] hover:-translate-y-1 focus:outline-none ${
+                  marketData.slice(4).some(d => d.crop === selectedCrop.crop)
+                    ? 'bg-neo-green-dark text-neo-cream'
+                    : 'bg-transparent text-neo-cream hover:bg-neo-green-dark/20'
+                }`}
+                style={{ backgroundColor: marketData.slice(4).some(d => d.crop === selectedCrop.crop) ? 'var(--color-neo-green-dark)' : 'var(--color-neo-dark)' }}
+                value={marketData.slice(4).some(d => d.crop === selectedCrop.crop) ? selectedCrop.crop : ""}
+                onChange={(e) => {
+                  const selected = marketData.find(d => d.crop === e.target.value);
+                  if (selected) setSelectedCrop(selected);
+                }}
+              >
+                <option value="" disabled>More...</option>
+                {marketData.slice(4).map(data => (
+                  <option key={data.crop} value={data.crop}>
+                    {data.crop}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neo-cream">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -104,7 +133,7 @@ const MarketAnalytics = () => {
             <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-2">
               SELECTED COMMODITY
             </p>
-            <h2 className={`font-heading text-5xl sm:text-6xl uppercase leading-none mb-4 ${theme === 'light' ? 'text-neo-green-light' : 'text-neo-green-dark'}`}>
+            <h2 className={`font-heading text-4xl sm:text-5xl lg:text-5xl break-words uppercase leading-none mb-4 ${theme === 'light' ? 'text-neo-green-light' : 'text-neo-green-dark'}`}>
               {selectedCrop.crop}
             </h2>
             <div className="mt-auto pt-6 border-t border-neo-cream/20">

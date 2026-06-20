@@ -13,13 +13,13 @@ const AdminDashboard = () => {
   useEffect(() => {
     const isAuth = localStorage.getItem('isAdminAuth');
     if (!isAuth) {
-      navigate('/admin-login');
+      navigate('/login');
     }
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('isAdminAuth');
-    navigate('/admin-login');
+    navigate('/login');
   };
 
   const handleStateClick = (stateName) => {

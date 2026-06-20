@@ -56,5 +56,49 @@ export const marketData = [
       { rank: 4, state: 'Maharashtra', production: 3.2 },
       { rank: 5, state: 'Telangana', production: 2.9 }
     ]
+  },
+  {
+    crop: 'Tea',
+    unit: 'Million Kg',
+    rankings: [
+      { rank: 1, state: 'Assam', production: 692.4 },
+      { rank: 2, state: 'West Bengal', production: 421.5 },
+      { rank: 3, state: 'Tamil Nadu', production: 154.2 },
+      { rank: 4, state: 'Kerala', production: 62.8 },
+      { rank: 5, state: 'Tripura', production: 8.9 }
+    ]
+  },
+  {
+    crop: 'Coffee',
+    unit: 'Thousand Tonnes',
+    rankings: [
+      { rank: 1, state: 'Karnataka', production: 242.0 },
+      { rank: 2, state: 'Kerala', production: 74.3 },
+      { rank: 3, state: 'Tamil Nadu', production: 18.5 },
+      { rank: 4, state: 'Andhra Pradesh', production: 8.2 },
+      { rank: 5, state: 'Odisha', production: 1.5 }
+    ]
+  },
+  {
+    crop: 'Pulses',
+    unit: 'Million Tonnes',
+    rankings: [
+      { rank: 1, state: 'Madhya Pradesh', production: 8.4 },
+      { rank: 2, state: 'Maharashtra', production: 4.9 },
+      { rank: 3, state: 'Rajasthan', production: 4.8 },
+      { rank: 4, state: 'Uttar Pradesh', production: 2.6 },
+      { rank: 5, state: 'Karnataka', production: 2.2 }
+    ]
+  },
+  {
+    crop: 'Soybean',
+    unit: 'Million Tonnes',
+    rankings: [
+      { rank: 1, state: 'Madhya Pradesh', production: 6.8 },
+      { rank: 2, state: 'Maharashtra', production: 6.2 },
+      { rank: 3, state: 'Rajasthan', production: 1.2 },
+      { rank: 4, state: 'Karnataka', production: 0.4 },
+      { rank: 5, state: 'Telangana', production: 0.3 }
+    ]
   }
 ];
