@@ -4,12 +4,9 @@ import { login } from '../lib/auth';
 
 const Login = () => {
   const navigate = useNavigate();
-  // modes: 'signin', 'signup', 'admin'
-  const [mode, setMode] = useState('signin');
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
@@ -20,25 +17,16 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
-    if (mode === 'signup' && password !== confirmPassword) {
-      setError('Passwords do not match.');
-      triggerShake();
-      return;
-    }
-
-    if (mode === 'admin') {
-      if (username === 'admin' && password === 'adminkapassword') {
-        localStorage.setItem('isAdminAuth', 'true');
-        navigate('/admin-dashboard');
-      } else {
-        setError('Invalid admin credentials.');
-        triggerShake();
-      }
+    // Admin login intercept
+    if (username === 'admin' && password === 'adminkapassword') {
+      localStorage.setItem('isAdminAuth', 'true');
+      navigate('/admin-dashboard');
       return;
     }
 
     setLoading(true);
-    // login function handles both signin and auto-signup on backend
+    
+    // Farmer login/auto-signup
     const result = await login(username, password);
     if (result.success) {
       navigate('/setup');
@@ -54,34 +42,6 @@ const Login = () => {
     setTimeout(() => setShake(false), 500);
   };
 
-  const renderTabs = () => (
-    <div className="flex bg-neo-dark border-2 border-neo-cream rounded-xl mb-6 overflow-hidden">
-      <button
-        type="button"
-        onClick={() => { setMode('signin'); setError(''); }}
-        className={`flex-1 py-2 font-subheading font-bold text-[10px] uppercase tracking-widest transition-colors ${mode === 'signin' ? 'bg-neo-green-dark text-neo-cream' : 'text-neo-cream/50 hover:text-neo-cream'}`}
-      >
-        Sign In
-      </button>
-      <div className="w-px bg-neo-cream border-l border-neo-cream"></div>
-      <button
-        type="button"
-        onClick={() => { setMode('signup'); setError(''); }}
-        className={`flex-1 py-2 font-subheading font-bold text-[10px] uppercase tracking-widest transition-colors ${mode === 'signup' ? 'bg-neo-green-dark text-neo-cream' : 'text-neo-cream/50 hover:text-neo-cream'}`}
-      >
-        Sign Up
-      </button>
-      <div className="w-px bg-neo-cream border-l border-neo-cream"></div>
-      <button
-        type="button"
-        onClick={() => { setMode('admin'); setError(''); }}
-        className={`flex-1 py-2 font-subheading font-bold text-[10px] uppercase tracking-widest transition-colors ${mode === 'admin' ? 'bg-neo-cream text-neo-dark' : 'text-neo-cream/50 hover:text-neo-cream'}`}
-      >
-        Admin
-      </button>
-    </div>
-  );
-
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
@@ -96,7 +56,7 @@ const Login = () => {
         style={{ backgroundColor: 'var(--color-neo-surface)', backgroundImage: 'none' }}
       >
         {/* Logo + title */}
-        <div className="mb-8 text-center">
+        <div className="mb-10 text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
             <svg viewBox="0 0 24 24" className="w-8 h-8 text-neo-green-dark" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeOpacity="0.3"/>
@@ -105,14 +65,12 @@ const Login = () => {
             </svg>
           </div>
           <h1 className="font-heading text-4xl text-neo-cream uppercase leading-none mb-2">
-            {mode === 'admin' ? 'ADMIN LOGIN' : 'FARMER LOGIN'}
+            FARMER LOGIN
           </h1>
           <p className="font-body text-neo-cream/40 text-xs uppercase tracking-widest">
-            {mode === 'admin' ? 'Restricted Access' : 'AgriIntelligence · Field Monitor'}
+            AgriIntelligence · Field Monitor
           </p>
         </div>
-
-        {renderTabs()}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -120,7 +78,7 @@ const Login = () => {
           {/* Username */}
           <div>
             <label className="block font-subheading text-[11px] uppercase tracking-widest text-neo-cream/50 mb-2">
-              {mode === 'admin' ? 'Admin ID' : 'Username'}
+              Full Name / Username
             </label>
             <input
               id="login-username"
@@ -128,7 +86,7 @@ const Login = () => {
               autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={mode === 'admin' ? 'e.g. admin' : 'e.g. Rajesh Kumar'}
+              placeholder="e.g. Rajesh Kumar"
               className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
               style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
               required
@@ -144,7 +102,7 @@ const Login = () => {
               <input
                 id="login-password"
                 type={showPass ? 'text' : 'password'}
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••"
@@ -174,25 +132,6 @@ const Login = () => {
             </div>
           </div>
 
-          {mode === 'signup' && (
-            <div>
-              <label className="block font-subheading text-[11px] uppercase tracking-widest text-neo-cream/50 mb-2">
-                Confirm Password
-              </label>
-              <input
-                id="login-confirm-password"
-                type="password"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••"
-                className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
-                style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
-                required
-              />
-            </div>
-          )}
-
           {/* Error message */}
           {error && (
             <div
@@ -208,7 +147,7 @@ const Login = () => {
             id="login-submit"
             type="submit"
             disabled={loading}
-            className={`w-full ${mode === 'admin' ? 'bg-neo-cream text-neo-dark' : 'bg-neo-green-dark text-neo-cream'} border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_var(--color-neo-cream)] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_var(--color-neo-cream)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2`}
+            className="w-full bg-neo-green-dark text-neo-cream border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_var(--color-neo-cream)] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_var(--color-neo-cream)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             style={{ backgroundImage: 'none' }}
           >
             {loading ? (
@@ -219,11 +158,14 @@ const Login = () => {
                 </svg>
                 PLEASE WAIT...
               </span>
-            ) : (
-              mode === 'signup' ? 'CREATE ACCOUNT' : 'SIGN IN'
-            )}
+            ) : 'SIGN IN'}
           </button>
         </form>
+
+        {/* Hint */}
+        <p className="text-center font-body text-neo-cream/20 text-[11px] mt-8 uppercase tracking-widest">
+          New username? A new account will be created automatically.
+        </p>
       </div>
 
       {/* Shake animation */}
