@@ -19,15 +19,6 @@ const About = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const y = window.scrollY;
-          const vh = window.innerHeight;
-
-          // Phase 2: Parallax Hero Reveal
-          if (pmtRef.current) {
-            const startY = vh * 0.55;
-            // PMT moves up very fast (y*1.8) and locks exactly at 0 (center)
-            const offset = Math.max(0, startY - y * 1.8);
-            pmtRef.current.style.transform = `translateY(${offset}px)`;
-          }
 
           // Phase 3: Editorial Statement (1:1 scroll)
           if (text1Ref.current) {
