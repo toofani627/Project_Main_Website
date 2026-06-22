@@ -67,67 +67,60 @@ const About = () => {
           .animate-bus-rev {
             display: inline-block;
             white-space: nowrap;
-            animation: bus-marquee-rev 18s linear infinite;
-          }
-          .animate-bus-sub {
-            display: inline-block;
-            white-space: nowrap;
-            animation: bus-marquee 18s linear infinite;
+            animation: bus-marquee-rev 12s linear infinite;
           }
         `}</style>
 
-        {/* Outer flex column: sub · PMT · sub */}
-        <div className="absolute inset-0 flex flex-col justify-center gap-0">
-
-          {/* ── TOP sub-marquee [pmt · prometheus] ── */}
-          <div className="overflow-hidden w-full" style={{ opacity: 0.55 }}>
-            <div className="animate-bus-rev">
-              {[...Array(12)].map((_, i) => (
-                <span
-                  key={i}
-                  className="font-subheading text-sm sm:text-lg uppercase tracking-[0.4em] pr-10"
-                  style={{ color: blackText }}
-                >
-                  [pmt · prometheus]
-                </span>
-              ))}
-            </div>
+        {/* ── MAIN PMT marquee — centred vertically ── */}
+        <div className="absolute left-0 right-0 overflow-hidden"
+          style={{ top: '50%', transform: 'translateY(-50%)' }}>
+          <div className="animate-bus">
+            {[...Array(6)].map((_, i) => (
+              <span
+                key={i}
+                className="font-heading leading-none tracking-tighter pr-16 sm:pr-32"
+                style={{
+                  color: blackText,
+                  fontSize: 'min(60vw, 600px)',
+                  textShadow: `8px 8px 0 ${whiteText}20`
+                }}
+              >
+                PMT
+              </span>
+            ))}
           </div>
+        </div>
 
-          {/* ── MAIN PMT marquee ── */}
-          <div className="overflow-hidden w-full">
-            <div className="animate-bus">
-              {[...Array(6)].map((_, i) => (
-                <span
-                  key={i}
-                  className="font-heading leading-none tracking-tighter pr-16 sm:pr-32"
-                  style={{
-                    color: blackText,
-                    fontSize: 'min(60vw, 600px)',
-                    textShadow: `8px 8px 0 ${whiteText}20`
-                  }}
-                >
-                  PMT
-                </span>
-              ))}
-            </div>
+        {/* ── TOP sub-band — positioned symmetrically above centre ── */}
+        <div className="absolute left-0 right-0 overflow-hidden"
+          style={{ top: 'calc(50% - min(30vw, 300px) - 2.5rem)' }}>
+          <div className="animate-bus-rev">
+            {[...Array(16)].map((_, i) => (
+              <span
+                key={i}
+                className="font-subheading text-sm sm:text-base uppercase tracking-[0.5em] pr-10"
+                style={{ color: whiteText }}
+              >
+                [pmt · prometheus]
+              </span>
+            ))}
           </div>
+        </div>
 
-          {/* ── BOTTOM sub-marquee [pmt · prometheus] ── */}
-          <div className="overflow-hidden w-full" style={{ opacity: 0.55 }}>
-            <div className="animate-bus-sub">
-              {[...Array(12)].map((_, i) => (
-                <span
-                  key={i}
-                  className="font-subheading text-sm sm:text-lg uppercase tracking-[0.4em] pr-10"
-                  style={{ color: blackText }}
-                >
-                  [pmt · prometheus]
-                </span>
-              ))}
-            </div>
+        {/* ── BOTTOM sub-band — positioned symmetrically below centre ── */}
+        <div className="absolute left-0 right-0 overflow-hidden"
+          style={{ top: 'calc(50% + min(30vw, 300px) + 1rem)' }}>
+          <div className="animate-bus-rev">
+            {[...Array(16)].map((_, i) => (
+              <span
+                key={i}
+                className="font-subheading text-sm sm:text-base uppercase tracking-[0.5em] pr-10"
+                style={{ color: whiteText }}
+              >
+                [pmt · prometheus]
+              </span>
+            ))}
           </div>
-
         </div>
 
         {/* Phase 3: Editorial Statement */}
