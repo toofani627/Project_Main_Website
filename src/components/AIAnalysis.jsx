@@ -228,7 +228,7 @@ const AIAnalysis = () => {
       const newDevice = {
         id: data.device || data.deviceID || data.deviceId || deviceId,
         temperature: data.air_temperature ?? data.airTemperature ?? data.temperature ?? '-',
-        humidity: data.humidity ?? '-',
+        humidity: browserWeather?.humidity ?? data.humidity ?? '-',
         soil: data.soil_moisture ?? data.soilMoisture ?? data.moisture ?? '-',
         nitrogen: data.nitrogen ?? data.n ?? '-',
         phosphorus: data.phosphorus ?? data.p ?? '-',
@@ -472,7 +472,7 @@ const AIAnalysis = () => {
     const telemetryPayload = {
       device: raw.device || raw.deviceId || raw.deviceID || latest.id || deviceId,
       temperature: toNumberOrNull(raw.temperature ?? latest.temperature),
-      humidity: toNumberOrNull(raw.humidity ?? latest.humidity),
+      humidity: toNumberOrNull(browserWeather?.humidity ?? raw.humidity ?? latest.humidity),
       soil_moisture: toNumberOrNull(raw.soil_moisture ?? raw.soilMoisture ?? raw.moisture ?? latest.soil),
       soilMoisture: toNumberOrNull(raw.soil_moisture ?? raw.soilMoisture ?? raw.moisture ?? latest.soil),
       soilTemperature: toNumberOrNull(raw.soilTemperature ?? latest.soilTemp),
@@ -1468,7 +1468,7 @@ const AIAnalysis = () => {
               const telemetryPayload = {
                 device: raw.device || raw.deviceId || raw.deviceID || lat.id || deviceId,
                 temperature: _n(raw.temperature ?? lat.temperature),
-                humidity: _n(raw.humidity ?? lat.humidity),
+                humidity: _n(browserWeather?.humidity ?? raw.humidity ?? lat.humidity),
                 soil_moisture: _n(raw.soil_moisture ?? raw.soilMoisture ?? raw.moisture ?? lat.soil),
                 soilMoisture: _n(raw.soil_moisture ?? raw.soilMoisture ?? raw.moisture ?? lat.soil),
                 soilTemperature: _n(raw.soilTemperature ?? lat.soilTemp),
