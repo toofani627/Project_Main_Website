@@ -9,8 +9,9 @@ const About = () => {
   const text2Ref = useRef(null);
 
   // Map theme variables based on the active mode to ensure extreme contrast
-  const greenCanvas = theme === 'light' ? 'var(--color-neo-green-light)' : 'var(--color-neo-green-dark)';
-  const blackText = theme === 'light' ? 'var(--color-neo-cream)' : 'var(--color-neo-dark)';
+  // Swapped: background is now dark/black, PMT letters are green
+  const greenCanvas = theme === 'light' ? 'var(--color-neo-cream)' : 'var(--color-neo-dark)';
+  const blackText = theme === 'light' ? 'var(--color-neo-green-light)' : 'var(--color-neo-green-dark)';
   const whiteText = theme === 'light' ? 'var(--color-neo-dark)' : 'var(--color-neo-cream)';
 
   useEffect(() => {
@@ -47,8 +48,8 @@ const About = () => {
       
       {/* ── FIXED BACKGROUND VAULT ─────────────────────────────────────── */}
       <div 
-        className="fixed top-16 left-0 w-full overflow-hidden pointer-events-none" 
-        style={{ height: 'calc(100vh - 64px)', zIndex: 0 }}
+        className="fixed top-0 left-0 w-full overflow-hidden pointer-events-none" 
+        style={{ height: '100vh', zIndex: 0 }}
       >
         <style>{`
           @keyframes bus-marquee {
@@ -91,7 +92,7 @@ const About = () => {
           </div>
         </div>
 
-        {/* ── TOP sub-band — positioned symmetrically above centre ── */}
+        {/* ── TOP sub-band — above the PMT letters ── */}
         <div className="absolute left-0 right-0 overflow-hidden"
           style={{ top: 'calc(50% - min(30vw, 300px) - 2.5rem)' }}>
           <div className="animate-bus-rev">
@@ -107,7 +108,7 @@ const About = () => {
           </div>
         </div>
 
-        {/* ── BOTTOM sub-band — positioned symmetrically below centre ── */}
+        {/* ── BOTTOM sub-band — below the PMT letters ── */}
         <div className="absolute left-0 right-0 overflow-hidden"
           style={{ top: 'calc(50% + min(30vw, 300px) + 1rem)' }}>
           <div className="animate-bus-rev">

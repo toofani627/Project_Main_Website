@@ -213,6 +213,17 @@ const AIAnalysis = () => {
 
       // Add to devices array (newest first - prepend instead of append)
       setDevices(prev => [newDevice, ...prev]);
+
+      // Persist lastDevice to the profile cache so Profile page can display it
+      try {
+        const profileKey = getProfileKey();
+        const raw = localStorage.getItem(profileKey);
+        const cached = raw ? JSON.parse(raw) : {};
+        cached.lastDevice = newDevice.id;
+        localStorage.setItem(profileKey, JSON.stringify(cached));
+      } catch (e) {
+        console.warn('Could not update lastDevice in profile cache:', e);
+      }
       
       // Show success popup
       setErrorPopup({
@@ -300,6 +311,16 @@ const AIAnalysis = () => {
       }
     };
     setDevices(prev => [mockDevice, ...prev]);
+    // Persist lastDevice for mock data too
+    try {
+      const profileKey = getProfileKey();
+      const raw = localStorage.getItem(profileKey);
+      const cached = raw ? JSON.parse(raw) : {};
+      cached.lastDevice = mockDevice.id;
+      localStorage.setItem(profileKey, JSON.stringify(cached));
+    } catch (e) {
+      console.warn('Could not update lastDevice in profile cache:', e);
+    }
     setErrorPopup({
       show: true,
       message: language === 'hi' ? 'डेमो डेटा लोड हो गया!' : language === 'ta' ? 'டெமோ தரவு சுமக்கப்பட்டது!' : 'Demo data loaded!',

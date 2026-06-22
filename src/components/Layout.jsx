@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -11,6 +11,23 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [panelOpen, setPanelOpen] = useState(false);
+  const [navHidden, setNavHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      // Hide when scrolling down past 60px, show when scrolling up
+      if (currentY > lastScrollY.current && currentY > 60) {
+        setNavHidden(true);
+      } else {
+        setNavHidden(false);
+      }
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -37,7 +54,9 @@ const Layout = () => {
       {/* ── Top Navbar ─────────────────────────────────────────────────── */}
       <header
         style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
-        className="border-b-2 border-neo-cream sticky top-0 z-50"
+        className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${
+          navHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
+        }`}
       >
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 max-w-7xl">
 
@@ -135,7 +154,9 @@ const Layout = () => {
       {/* ── Mobile Nav ─────────────────────────────────────────────────── */}
       <nav
         style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
-        className="md:hidden border-b-2 border-neo-cream py-2 px-3 flex justify-around gap-2 sticky top-16 z-40"
+        className={`md:hidden py-2 px-3 flex justify-around gap-2 sticky top-0 z-40 transition-all duration-300 ease-in-out ${
+          navHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
+        }`}
       >
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
