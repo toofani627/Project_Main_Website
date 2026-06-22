@@ -94,7 +94,7 @@ const About = () => {
 
         {/* ── TOP sub-band — above the PMT letters ── */}
         <div className="absolute left-0 right-0 overflow-hidden"
-          style={{ top: 'calc(50% - min(30vw, 300px) - 2.5rem)' }}>
+          style={{ top: 'max(5rem, calc(50% - min(30vw, 300px) - 2rem))' }}>
           <div className="animate-bus-rev">
             {[...Array(16)].map((_, i) => (
               <span
@@ -110,7 +110,7 @@ const About = () => {
 
         {/* ── BOTTOM sub-band — below the PMT letters ── */}
         <div className="absolute left-0 right-0 overflow-hidden"
-          style={{ top: 'calc(50% + min(30vw, 300px) + 1rem)' }}>
+          style={{ top: 'calc(50% + min(30vw, 300px) + 2rem)' }}>
           <div className="animate-bus-rev">
             {[...Array(16)].map((_, i) => (
               <span
