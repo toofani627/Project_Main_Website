@@ -73,6 +73,27 @@ const AIAnalysis = () => {
   const [deviceId, setDeviceId] = useState('');
   const [showDeviceIdInput, setShowDeviceIdInput] = useState(false);
   const [manualDeviceId, setManualDeviceId] = useState('');
+  const [availableDevices, setAvailableDevices] = useState([]);
+
+  useEffect(() => {
+    if (!deviceId || showDeviceIdInput) {
+      const fetchDevices = async () => {
+        try {
+          const baseUrl = import.meta.env.VITE_API_URL || '';
+          const res = await fetch(`${baseUrl}/api/devices`);
+          if (res.ok) {
+            const data = await res.json();
+            setAvailableDevices(data.devices || []);
+          }
+        } catch (e) {
+          console.error("Could not fetch devices", e);
+        }
+      };
+      fetchDevices();
+      const interval = setInterval(fetchDevices, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [deviceId, showDeviceIdInput]);
   
   // Table display state - show only 4 rows by default
   const [showAllRows, setShowAllRows] = useState(false);
@@ -1220,8 +1241,30 @@ const AIAnalysis = () => {
             ) : (
               <form onSubmit={handleManualDeviceIdSubmit} className="space-y-3">
                 <p className="text-xs text-neo-cream/60 font-body">
-                  {language === 'hi' ? 'डिवाइस ID डालें' : 'Enter Device ID'}
+                  {language === 'hi' ? 'डिवाइस ID डालें या चुनें' : 'Enter or Select Device ID'}
                 </p>
+                
+                {availableDevices.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-[10px] uppercase tracking-widest text-neo-green-light/80 mb-2">
+                      {language === 'hi' ? 'उपलब्ध डिवाइस:' : 'Available Devices:'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {availableDevices.map(d => (
+                        <button
+                          key={d.deviceId}
+                          type="button"
+                          onClick={() => setManualDeviceId(d.deviceId)}
+                          className="px-2.5 py-1.5 bg-neo-green-dark/20 text-neo-cream border border-neo-green-dark rounded-lg text-xs hover:bg-neo-green-dark/40 transition-colors flex items-center gap-1.5"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${d.connected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                          {d.deviceId}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <input
                   type="text"
                   value={manualDeviceId}
