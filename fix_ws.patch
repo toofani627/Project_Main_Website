@@ -1,0 +1,20 @@
+--- server.js
++++ server.js
+@@ -399,7 +399,7 @@
+   ws.on('close', () => {
+     if (deviceId) {
+       const device = connectedDevices.get(deviceId);
+-      if (device) {
++      if (device && device.ws === ws) {
+         device.connected = false;
+       }
+       console.log(`Device disconnected: ${deviceId}`);
+@@ -432,7 +432,7 @@
+     });
+   }
+   
+-  if (!device.connected || !device.ws) {
++  if (!device.ws) {
+     return res.status(503).json({ 
+       error: "Device is offline",
+       deviceId: deviceId

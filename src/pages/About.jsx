@@ -248,7 +248,7 @@ const About = () => {
                   boxShadow: `4px 4px 0 ${blackText}`
                 }}
               >
-                Team Anna Mani
+                Project Prometheus
               </span>.
             </p>
           </div>

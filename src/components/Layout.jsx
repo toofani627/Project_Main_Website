@@ -67,7 +67,7 @@ const Layout = () => {
           >
             <img
               src="/anna-mani-logo.svg"
-              alt="Team Anna Mani logo"
+              alt="Project Prometheus logo"
               className="w-6 h-6 object-contain"
             />
             <span className="font-heading text-lg sm:text-xl text-neo-cream tracking-widest uppercase">
