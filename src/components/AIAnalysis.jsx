@@ -285,13 +285,13 @@ const AIAnalysis = () => {
             timestamp: new Date().toISOString()
           };
           
-          const currentUser = localStorage.getItem('currentUser');
-          if (currentUser) {
+          const session = getSession();
+          if (session) {
             try {
               await fetch('/api/soil-scans', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: currentUser, scan: scanData })
+                body: JSON.stringify({ username: session.username, scan: scanData })
               });
               console.log('✅ Soil scan registered to map profile.');
             } catch (err) {

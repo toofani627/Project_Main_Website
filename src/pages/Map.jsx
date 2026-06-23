@@ -16,14 +16,14 @@ const MapController = ({ center, zoom }) => {
 };
 
 const getHealthColor = (score) => {
-  if (score <= 35) return '#00B4D8';
-  if (score <= 68) return '#7209B7';
-  return '#E76F51';
+  if (score < 40) return '#ef4444'; // Red
+  if (score < 70) return '#E0F5DC'; // Light Green
+  return '#157A26'; // Dark Green
 };
 
 const getHealthLabel = (score) => {
-  if (score <= 35) return 'Poor';
-  if (score <= 68) return 'Moderate';
+  if (score < 40) return 'Poor';
+  if (score < 70) return 'Moderate';
   return 'Prime';
 };
 
@@ -96,16 +96,16 @@ const MapPage = () => {
         
         <div className="flex flex-col gap-2 text-xs font-mono tracking-widest text-white/80 uppercase">
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#00B4D8] shadow-[0_0_8px_rgba(0,180,216,0.8)]" />
-            <span>0-35 (Poor)</span>
+            <div className="w-3 h-3 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+            <span>0-39 (Poor)</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#7209B7] shadow-[0_0_8px_rgba(114,9,183,0.8)]" />
-            <span>36-68 (Moderate)</span>
+            <div className="w-3 h-3 rounded-full bg-[#E0F5DC] shadow-[0_0_8px_rgba(224,245,220,0.8)]" />
+            <span>40-69 (Moderate)</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#E76F51] shadow-[0_0_8px_rgba(231,111,81,0.8)]" />
-            <span>69-100 (Prime)</span>
+            <div className="w-3 h-3 rounded-full bg-[#157A26] shadow-[0_0_8px_rgba(21,122,38,0.8)]" />
+            <span>70-100 (Prime)</span>
           </div>
         </div>
 
