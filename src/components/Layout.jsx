@@ -38,6 +38,7 @@ const Layout = () => {
   const navItems = [
     { path: '/ai-analysis', label: t('navDashboard') },
     { path: '/multi-crop',  label: t('navCompanion') },
+    { path: '/map',         label: 'Map' },
     { path: '/profile',     label: t('navProfile') },
     { path: '/about',       label: 'About' },
   ];

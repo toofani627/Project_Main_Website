@@ -39,6 +39,7 @@ const userProfileSchema = new mongoose.Schema({
   lastDevice:  { type: String, default: null },
   crops:       { type: Array,  default: [] },   // [{ id, name, dateGrown }]
   fertilizers: { type: Array,  default: [] },   // [{ id, name, amount, unit }]
+  soilScans:   { type: Array,  default: [] },   // [{ id, lat, lng, soilHealth, n, p, k, moisture, temp, timestamp }]
   updatedAt:   { type: Date,   default: Date.now }
 });
 
@@ -678,9 +679,48 @@ app.post("/api/profile", async (req, res) => {
     }
     console.log(`✅ Profile saved for: ${u}`);
     res.json({ success: true, updatedAt: profile.updatedAt });
-  } catch (err) {
-    console.error('❌ POST /api/profile error:', err.message);
-    res.status(500).json({ error: 'Failed to save profile' });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post("/api/soil-scans", async (req, res) => {
+  try {
+    const { username, scan } = req.body || {};
+    if (!username || !scan) return res.status(400).json({ error: 'username and scan are required' });
+    const u = username.toLowerCase().trim();
+    
+    scan.id = scan.id || Date.now().toString();
+    scan.timestamp = scan.timestamp || new Date().toISOString();
+    
+    const profile = await UserProfile.findOneAndUpdate(
+      { username: u },
+      { $push: { soilScans: scan }, $set: { updatedAt: new Date() } },
+      { new: true }
+    );
+    if (!profile) return res.status(404).json({ error: 'User not found.' });
+    
+    res.json({ success: true, scan });
+  } catch (error) {
+    console.error('Soil scan save error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get("/api/soil-scans", async (req, res) => {
+  try {
+    const username = req.query.username;
+    if (!username) return res.status(400).json({ error: 'username query param is required' });
+    const u = username.toLowerCase().trim();
+    
+    const profile = await UserProfile.findOne({ username: u });
+    if (!profile) return res.status(404).json({ error: 'User not found.' });
+    
+    res.json({ success: true, soilScans: profile.soilScans || [] });
+  } catch (error) {
+    console.error('Fetch soil scans error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 // ──────────────────────────────────────────────────────────────────────────────

@@ -13,6 +13,8 @@
   "license": "MIT",
   "dependencies": {
     "@react-map/india": "^1.0.21",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "cors": "^2.8.6",
     "d3-scale": "^4.0.2",
     "dotenv": "^16.4.5",
@@ -24,6 +26,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
     "react-simple-maps": "^3.0.0",
+    "three": "^0.184.0",
     "ws": "^8.14.2"
   },
   "devDependencies": {

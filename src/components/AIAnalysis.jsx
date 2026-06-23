@@ -260,6 +260,50 @@ const AIAnalysis = () => {
       } catch (e) {
         console.warn('Could not update lastDevice in profile cache:', e);
       }
+
+      // Geo-register the scan for the 3D Map
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          // Basic soil health formula (0-100) based on NPK and Moisture
+          let score = 100;
+          const s = Number(newDevice.soil) || 0;
+          const n = Number(newDevice.nitrogen) || 0;
+          const p = Number(newDevice.phosphorus) || 0;
+          const k = Number(newDevice.potassium) || 0;
+          
+          if (s < 20 || s > 80) score -= 20;
+          if (n < 50) score -= 15;
+          if (p < 20) score -= 10;
+          if (k < 100) score -= 10;
+          score = Math.max(0, score);
+          
+          const scanData = {
+            lat, lng, soilHealth: score,
+            n, p, k, moisture: s, temp: Number(newDevice.temperature) || 0,
+            timestamp: new Date().toISOString()
+          };
+          
+          const currentUser = localStorage.getItem('currentUser');
+          if (currentUser) {
+            try {
+              await fetch('/api/soil-scans', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUser, scan: scanData })
+              });
+              console.log('✅ Soil scan registered to map profile.');
+            } catch (err) {
+              console.error('Failed to post soil scan:', err);
+            }
+          }
+        }, (err) => {
+          console.warn('Geolocation denied or failed. Map registration skipped.', err);
+        });
+      }
+
       
       // Show success popup
       setErrorPopup({
