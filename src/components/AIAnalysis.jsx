@@ -400,6 +400,48 @@ const AIAnalysis = () => {
     } catch (e) {
       console.warn('Could not update lastDevice in profile cache:', e);
     }
+    
+    // Geo-register the scan for the 2D Map
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        const s = Number(mockDevice.soil) || 0;
+        const n = Number(mockDevice.nitrogen) || 0;
+        const p = Number(mockDevice.phosphorus) || 0;
+        const k = Number(mockDevice.potassium) || 0;
+        const ph = Number(mockDevice.phLevel) || 6.8;
+        
+        const moistureScore = Math.max(0, 100 - Math.abs(s - 60) * 2);
+        const phScore = Math.max(0, 100 - Math.abs(ph - 6.8) * 25);
+        const npkScore = Math.min(100, ((n + p + k) / 300) * 100); 
+        const score = Math.round((moistureScore * 0.4) + (npkScore * 0.4) + (phScore * 0.2));
+        
+        const scanData = {
+          lat, lng, soilHealth: score,
+          n, p, k, moisture: s, temp: Number(mockDevice.temperature) || 0,
+          timestamp: new Date().toISOString()
+        };
+        
+        const session = getSession();
+        if (session) {
+          try {
+            await fetch('/api/soil-scans', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: session.username, scan: scanData })
+            });
+            console.log('✅ Demo soil scan registered to map profile.');
+          } catch (err) {
+            console.error('Failed to post demo soil scan:', err);
+          }
+        }
+      }, (err) => {
+        console.warn('Geolocation denied or failed. Map registration skipped.', err);
+      });
+    }
+
     setErrorPopup({
       show: true,
       message: language === 'hi' ? 'डेमो डेटा लोड हो गया!' : language === 'ta' ? 'டெமோ தரவு சுமக்கப்பட்டது!' : 'Demo data loaded!',
