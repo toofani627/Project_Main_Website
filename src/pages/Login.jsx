@@ -68,7 +68,7 @@ const Login = () => {
             FARMER LOGIN
           </h1>
           <p className="font-body text-neo-cream/40 text-xs uppercase tracking-widest">
-            AgriIntelligence · Field Monitor
+            Prometheus · Field Monitor
           </p>
         </div>
 
