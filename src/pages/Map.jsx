@@ -58,7 +58,21 @@ const MapPage = () => {
           const validScans = (data.soilScans || []).filter(
             s => typeof s.lat === 'number' && typeof s.lng === 'number' && !isNaN(s.lat) && !isNaN(s.lng)
           );
-          setScans(validScans);
+          
+          if (validScans.length === 0) {
+            // Provide realistic demo data if user has no real scans
+            const demoScans = [
+              { lat: 28.6139, lng: 77.2090, soilHealth: 32, moisture: 45, ph: 5.8, n: 30, p: 15, k: 80, timestamp: Date.now() - 100000 },
+              { lat: 19.0760, lng: 72.8777, soilHealth: 65, moisture: 55, ph: 6.5, n: 60, p: 30, k: 120, timestamp: Date.now() - 500000 },
+              { lat: 13.0827, lng: 80.2707, soilHealth: 88, moisture: 62, ph: 6.8, n: 80, p: 45, k: 150, timestamp: Date.now() - 900000 },
+              { lat: 22.5726, lng: 88.3639, soilHealth: 48, moisture: 70, ph: 7.2, n: 40, p: 20, k: 90, timestamp: Date.now() - 1500000 },
+              { lat: 12.9716, lng: 77.5946, soilHealth: 95, moisture: 60, ph: 6.7, n: 90, p: 50, k: 160, timestamp: Date.now() - 2000000 },
+              { lat: 23.0225, lng: 72.5714, soilHealth: 25, moisture: 30, ph: 8.1, n: 20, p: 10, k: 60, timestamp: Date.now() - 3000000 }
+            ];
+            setScans(demoScans);
+          } else {
+            setScans(validScans);
+          }
         } else {
           setError(data.error);
         }
