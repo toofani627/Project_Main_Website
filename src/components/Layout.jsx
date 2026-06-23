@@ -68,9 +68,9 @@ const Layout = () => {
             <img
               src="/anna-mani-logo.svg"
               alt="Project Prometheus logo"
-              className="w-6 h-6 object-contain"
+              className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
             />
-            <span className="font-heading text-lg sm:text-xl text-neo-cream tracking-widest uppercase">
+            <span className="font-heading text-2xl sm:text-3xl text-neo-cream tracking-widest uppercase">
               Prometheus
             </span>
           </div>
