@@ -445,7 +445,7 @@ wss.on('connection', (ws, req) => {
   ws.on('close', () => {
     if (deviceId) {
       const device = connectedDevices.get(deviceId);
-      if (device) {
+      if (device && device.ws === ws) {
         device.connected = false;
       }
       console.log(`Device disconnected: ${deviceId}`);
@@ -532,7 +532,7 @@ app.post("/api/request-data", (req, res) => {
     });
   }
   
-  if (!device.connected || !device.ws) {
+  if (!device.ws) {
     return res.status(503).json({ 
       error: "Device is offline",
       deviceId: deviceId
