@@ -350,106 +350,127 @@ const AIAnalysis = () => {
     fetchDeviceData();
   };
 
-  // Load mock/demo data for testing
-  const handleLoadMockData = () => {
-    const mockDevice = {
-      id: 'DEMO-DEVICE',
-      temperature: 32.1,
-      humidity: 58.4,
-      soil: 45.8,
-      nitrogen: 40.2,
-      phosphorus: 18.5,
-      potassium: 145.0,
-      phLevel: 7.2,
-      ec: 1.15,
-      soilTemp: 29.8,
-      timestamp: new Date().toLocaleString('en-GB', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }),
-      raw: {
-        device: 'DEMO-DEVICE',
+  // Load mock/satellite data for testing
+  const loadDemoData = async () => {
+    try {
+      const mockDevice = {
+        id: 'REMOTE-SENSOR',
         temperature: 32.1,
         humidity: 58.4,
-        soil_moisture: 45.8,
-        soilMoisture: 45.8,
+        soil: 45.8,
         nitrogen: 40.2,
         phosphorus: 18.5,
         potassium: 145.0,
-        ph_level: 7.2,
-        electrical_conductivity: 1.15,
-        soilTemperature: 29.8,
-        latitude: 21.3099,
-        longitude: 77.1025,
-        pH: 7.2,
-        _mock_sensors_generated: true
-      }
-    };
-    setDevices(prev => [mockDevice, ...prev]);
-    // Persist lastDevice for mock data too
-    try {
-      const profileKey = getProfileKey();
-      const raw = localStorage.getItem(profileKey);
-      const cached = raw ? JSON.parse(raw) : {};
-      cached.lastDevice = mockDevice.id;
-      localStorage.setItem(profileKey, JSON.stringify(cached));
-    } catch (e) {
-      console.warn('Could not update lastDevice in profile cache:', e);
-    }
-    
-    // Geo-register the scan for the 2D Map
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
-        const s = Number(mockDevice.soil) || 0;
-        const n = Number(mockDevice.nitrogen) || 0;
-        const p = Number(mockDevice.phosphorus) || 0;
-        const k = Number(mockDevice.potassium) || 0;
-        const ph = Number(mockDevice.phLevel) || 6.8;
-        
-        const moistureScore = Math.max(0, 100 - Math.abs(s - 60) * 2);
-        const phScore = Math.max(0, 100 - Math.abs(ph - 6.8) * 25);
-        const npkScore = Math.min(100, ((n + p + k) / 300) * 100); 
-        const score = Math.round((moistureScore * 0.4) + (npkScore * 0.4) + (phScore * 0.2));
-        
-        const scanData = {
-          lat, lng, soilHealth: score,
-          n, p, k, moisture: s, temp: Number(mockDevice.temperature) || 0,
-          timestamp: new Date().toISOString()
-        };
-        
-        const session = getSession();
-        if (session) {
-          try {
-            await fetch('/api/soil-scans', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username: session.username, scan: scanData })
-            });
-            console.log('✅ Demo soil scan registered to map profile.');
-          } catch (err) {
-            console.error('Failed to post demo soil scan:', err);
-          }
+        phLevel: 7.2,
+        ec: 1.15,
+        soilTemp: 29.8,
+        timestamp: new Date().toLocaleString('en-GB', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }),
+        raw: {
+          device: 'REMOTE-SENSOR',
+          temperature: 32.1,
+          humidity: 58.4,
+          soil_moisture: 45.8,
+          soilMoisture: 45.8,
+          nitrogen: 40.2,
+          phosphorus: 18.5,
+          potassium: 145.0,
+          ph_level: 7.2,
+          electrical_conductivity: 1.15,
+          soilTemperature: 29.8,
+          latitude: 21.3099,
+          longitude: 77.1025,
+          pH: 7.2,
+          _mock_sensors_generated: true
         }
-      }, (err) => {
-        console.warn('Geolocation denied or failed. Map registration skipped.', err);
-      });
-    }
+      };
 
-    setErrorPopup({
-      show: true,
-      message: language === 'hi' ? 'डेमो डेटा लोड हो गया!' : language === 'ta' ? 'டெமோ தரவு சுமக்கப்பட்டது!' : 'Demo data loaded!',
-      solution: null,
-      type: 'success',
-      isLarge: true
-    });
-    setStatusMessage('');
+      setDevices(prev => [mockDevice, ...prev]);
+      setTelemetryData(prev => ({
+        ...prev,
+        [mockDevice.id]: {
+          device: 'REMOTE-SENSOR',
+          temperature: 32.1,
+          humidity: 58.4,
+          soil_moisture: 45.8,
+          soilMoisture: 45.8,
+          nitrogen: 40.2,
+          phosphorus: 18.5,
+          potassium: 145.0,
+          ph_level: 7.2,
+          electrical_conductivity: 1.15,
+          soilTemperature: 29.8,
+        }
+      }));
+      
+      // Persist lastDevice for mock data too
+      try {
+        const profileKey = getProfileKey();
+        const raw = localStorage.getItem(profileKey);
+        const cached = raw ? JSON.parse(raw) : {};
+        cached.lastDevice = mockDevice.id;
+        localStorage.setItem(profileKey, JSON.stringify(cached));
+      } catch (e) {
+        console.warn('Could not update lastDevice in profile cache:', e);
+      }
+      
+      // Geo-register the scan for the 2D Map
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          const s = Number(mockDevice.soil) || 0;
+          const n = Number(mockDevice.nitrogen) || 0;
+          const p = Number(mockDevice.phosphorus) || 0;
+          const k = Number(mockDevice.potassium) || 0;
+          const ph = Number(mockDevice.phLevel) || 6.8;
+          
+          const moistureScore = Math.max(0, 100 - Math.abs(s - 60) * 2);
+          const phScore = Math.max(0, 100 - Math.abs(ph - 6.8) * 25);
+          const npkScore = Math.min(100, ((n + p + k) / 300) * 100); 
+          const score = Math.round((moistureScore * 0.4) + (npkScore * 0.4) + (phScore * 0.2));
+          
+          const scanData = {
+            lat, lng, soilHealth: score,
+            n, p, k, moisture: s, temp: Number(mockDevice.temperature) || 0,
+            timestamp: new Date().toISOString()
+          };
+          
+          const session = getSession();
+          if (session) {
+            try {
+              await fetch('/api/soil-scans', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: session.username, scan: scanData })
+              });
+              console.log('✅ Satellite scan registered to map profile.');
+            } catch (err) {
+              console.error('Failed to post satellite scan:', err);
+            }
+          }
+        }, (err) => {
+          console.warn('Geolocation denied or failed. Map registration skipped.', err);
+        });
+      }
+
+      setErrorPopup({
+        show: true,
+        type: 'success',
+        message: language === 'hi' ? 'सैटेलाइट डेटा लोड हो गया!' : language === 'ta' ? 'செயற்கைக்கோள் தரவு சுமக்கப்பட்டது!' : 'Satellite data loaded!',
+        solution: null
+      });
+      setStatusMessage('');
+    } catch (err) {
+      console.error('Failed loading satellite data:', err);
+    }
   };
 
   const handleManualDeviceIdSubmit = async (e) => {
@@ -534,8 +555,8 @@ const AIAnalysis = () => {
       setErrorPopup({
         show: true,
         type: 'error',
-        message: language === 'hi' ? 'पहले सेंसर डेटा लें' : language === 'ta' ? 'முதலில் உணரி தரவை பெறவும்' : 'Get sensor data first',
-        solution: language === 'hi' ? '"Get Data" बटन दबाएं' : language === 'ta' ? '"தரவைப் பெறு" பொத்தானை கிளிக் செய்யவும்' : 'Click "Get Data" button'
+        message: language === 'hi' ? 'कोई डेटा नहीं मिला' : 'No recent data from sensors',
+        solution: language === 'hi' ? '"Get Data" बटन दबाएं' : 'Click the "Get Data" or "Satellite Scan" button'
       });
       setTimeout(() => setErrorPopup({ show: false, type: '', message: '', solution: '' }), 5000);
       return;
@@ -1303,7 +1324,7 @@ const AIAnalysis = () => {
                     {loading ? t('reading') : t('getData')}
                   </button>
                   <button
-                    onClick={handleLoadMockData}
+                    onClick={loadDemoData}
                     className="w-full bg-[var(--color-neo-surface)] text-neo-cream border border-neo-cream/40 rounded-xl py-2.5 text-xs font-bold font-subheading uppercase tracking-widest transition-all hover:bg-neo-cream hover:text-neo-dark"
                     style={{backgroundImage:'none'}}
                   >

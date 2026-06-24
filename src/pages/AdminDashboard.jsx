@@ -168,7 +168,7 @@ const AdminDashboard = () => {
             </div>
             
             <p className="font-body text-neo-cream/25 text-[10px] uppercase tracking-widest text-center mt-4">
-              DATA IS PERIODICALLY SYNCED WITH REGIONAL AGRICULTURAL CENTERS.
+              DATA TAKEN FROM GOVT WEBSITE
             </p>
 
           </div>
