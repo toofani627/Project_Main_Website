@@ -185,32 +185,18 @@ const About = () => {
               className="font-heading text-6xl sm:text-8xl lg:text-9xl uppercase tracking-tighter leading-none" 
               style={{ color: greenCanvas }}
             >
-              Founders
+              Creators
             </h2>
             
-            <div className="flex gap-4 sm:gap-8 flex-wrap">
-              {/* Duotone Portrait 1 */}
+            <div className="flex gap-4 sm:gap-8 flex-wrap w-full">
+              {/* Team Group Photo */}
               <div 
-                className="w-40 h-56 sm:w-56 sm:h-72 relative overflow-hidden rounded-2xl border-4 shadow-[8px_8px_0px_rgba(0,0,0,1)]"
+                className="w-full sm:w-[500px] h-64 sm:h-80 relative overflow-hidden rounded-2xl border-4 shadow-[8px_8px_0px_rgba(0,0,0,1)]"
                 style={{ borderColor: blackText, boxShadow: `8px 8px 0 ${blackText}` }}
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
-                  alt="Founder" 
-                  className="absolute inset-0 w-full h-full object-cover grayscale mix-blend-multiply opacity-90"
-                />
-                <div className="absolute inset-0 mix-blend-color opacity-80" style={{ backgroundColor: greenCanvas }} />
-                <div className="absolute inset-0 mix-blend-overlay opacity-30" style={{ backgroundColor: greenCanvas }} />
-              </div>
-
-              {/* Duotone Portrait 2 */}
-              <div 
-                className="w-40 h-56 sm:w-56 sm:h-72 relative overflow-hidden rounded-2xl border-4 shadow-[8px_8px_0px_rgba(0,0,0,1)] mt-8 sm:mt-12"
-                style={{ borderColor: blackText, boxShadow: `8px 8px 0 ${blackText}` }}
-              >
-                <img 
-                  src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
-                  alt="Founder 2" 
+                  src="/team.png" 
+                  alt="Team Project Prometheus" 
                   className="absolute inset-0 w-full h-full object-cover grayscale mix-blend-multiply opacity-90"
                 />
                 <div className="absolute inset-0 mix-blend-color opacity-80" style={{ backgroundColor: greenCanvas }} />
@@ -222,7 +208,7 @@ const About = () => {
           {/* Right: Bio Statement with Inverted Pills */}
           <div className="lg:col-span-6 lg:pl-12">
             <p className="font-body text-3xl sm:text-5xl leading-tight" style={{ color: blackText }}>
-              Founded by veteran agricultural technologist{' '}
+              Created by the team and software lead{' '}
               <span 
                 className="inline-block px-5 py-2 rounded-2xl mx-1 transform rotate-1 border-2"
                 style={{ 
@@ -234,9 +220,9 @@ const About = () => {
                   boxShadow: `4px 4px 0 ${blackText}`
                 }}
               >
-                Advanil Shukla
+                Aradhy Shukla
               </span>
-              , together with lead IoT engineering collective{' '}
+              , together with the team{' '}
               <span 
                 className="inline-block px-5 py-2 rounded-2xl mx-1 mt-3 sm:mt-0 transform -rotate-1 border-2"
                 style={{ 
@@ -248,7 +234,7 @@ const About = () => {
                   boxShadow: `4px 4px 0 ${blackText}`
                 }}
               >
-                Project Prometheus
+                Anna Mani
               </span>.
             </p>
           </div>
