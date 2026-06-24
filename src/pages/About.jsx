@@ -191,8 +191,8 @@ const About = () => {
             <div className="flex gap-4 sm:gap-8 flex-wrap w-full">
               {/* Team Group Photo */}
               <div 
-                className="w-full sm:w-[500px] h-64 sm:h-80 relative overflow-hidden rounded-2xl border-4 shadow-[8px_8px_0px_rgba(0,0,0,1)]"
-                style={{ borderColor: blackText, boxShadow: `8px 8px 0 ${blackText}` }}
+                className="w-full h-72 sm:h-96 lg:h-[420px] relative overflow-hidden rounded-2xl border-4 shadow-[10px_10px_0px_rgba(0,0,0,1)]"
+                style={{ borderColor: blackText, boxShadow: `10px 10px 0 ${blackText}` }}
               >
                 <img 
                   src="/team.png" 
