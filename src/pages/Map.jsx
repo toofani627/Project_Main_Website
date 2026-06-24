@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import 'leaflet.heat';
 import { useLanguage } from '../context/LanguageContext';
-import { getSession } from '../lib/auth';
+
 
 // Helper component to smoothly re-center the map when userLocation is found
 const MapController = ({ center, zoom }) => {
@@ -63,14 +63,21 @@ const getHealthLabel = (score) => {
   return 'Prime';
 };
 
+const IIITD_SCANS = Array.from({ length: 50 }).map(() => {
+  const lat = 28.5457 + (Math.random() - 0.5) * 0.01;
+  const lng = 77.2732 + (Math.random() - 0.5) * 0.01;
+  const distance = Math.sqrt(Math.pow(lat - 28.5457, 2) + Math.pow(lng - 77.2732, 2));
+  let score = 90 - (distance / 0.005) * 60 + (Math.random() * 20 - 10);
+  score = Math.max(10, Math.min(100, Math.round(score)));
+  return { lat, lng, soilHealth: score };
+});
+
 const MapPage = () => {
   const { language } = useLanguage();
-  const [scans, setScans] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [scans, setScans] = useState(IIITD_SCANS);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userLocation, setUserLocation] = useState(null);
-
-  const session = getSession();
 
   useEffect(() => {
     // Get live location
@@ -79,41 +86,10 @@ const MapPage = () => {
         setUserLocation([pos.coords.latitude, pos.coords.longitude]);
       });
     }
-
-    const fetchScans = async () => {
-      if (!session) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const res = await fetch(`/api/soil-scans?username=${session.username}`);
-        const data = await res.json();
-        if (data.success) {
-          // Filter out invalid scans that don't have proper coordinates
-          const validScans = (data.soilScans || []).filter(
-            s => typeof s.lat === 'number' && typeof s.lng === 'number' && !isNaN(s.lat) && !isNaN(s.lng)
-          );
-          setScans(validScans);
-        } else {
-          setError(data.error);
-        }
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load map data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchScans();
   }, []);
 
-  // Determine initial center. Default to user location, then latest scan, then center of India
-  const center = userLocation 
-    ? userLocation 
-    : scans.length > 0 
-    ? [scans[scans.length - 1].lat, scans[scans.length - 1].lng] 
-    : [22.0, 78.0];
+  // Center on IIIT Delhi natively, rather than generic center or last scan
+  const center = [28.5457, 77.2732];
 
   const averageHealth = scans.length > 0 
     ? Math.round(scans.reduce((sum, scan) => sum + scan.soilHealth, 0) / scans.length) 
@@ -157,49 +133,6 @@ const MapPage = () => {
           </div>
         </div>
 
-        {session ? (
-          <button 
-            onClick={async () => {
-              // Generate 50 points around IIIT Delhi
-              const promises = [];
-              for (let i = 0; i < 50; i++) {
-                const lat = 28.5457 + (Math.random() - 0.5) * 0.01;
-                const lng = 77.2732 + (Math.random() - 0.5) * 0.01;
-                
-                const distance = Math.sqrt(Math.pow(lat - 28.5457, 2) + Math.pow(lng - 77.2732, 2));
-                let score = 90 - (distance / 0.005) * 60 + (Math.random() * 20 - 10);
-                score = Math.max(10, Math.min(100, Math.round(score)));
-                
-                const scanData = {
-                  lat, lng, soilHealth: score,
-                  n: Math.round(40 + Math.random()*20), 
-                  p: Math.round(20 + Math.random()*10), 
-                  k: Math.round(140 + Math.random()*20), 
-                  moisture: Math.round(50 + Math.random()*20), 
-                  temp: 32,
-                  timestamp: new Date().toISOString()
-                };
-                
-                promises.push(
-                  fetch('/api/soil-scans', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: session.username, scan: scanData })
-                  })
-                );
-              }
-              await Promise.all(promises);
-              window.location.reload();
-            }}
-            className="mt-4 w-full py-2 bg-neo-green-dark/20 hover:bg-neo-green-dark/40 border border-neo-green-dark/50 rounded-xl text-neo-green-light text-xs font-mono tracking-widest transition-colors pointer-events-auto"
-          >
-            Display IIITD Map
-          </button>
-        ) : (
-          <div className="mt-4 p-3 border border-red-500/50 rounded-xl bg-red-500/10 text-red-400 text-xs pointer-events-auto">
-            You must be logged in to sync and save map locations.
-          </div>
-        )}
       </div>
 
       {/* Overall Health Display */}
@@ -226,7 +159,7 @@ const MapPage = () => {
           zoomControl={false}
         >
           <ZoomControl position="bottomleft" />
-          <MapController center={center} zoom={userLocation ? 10 : 4} />
+          <MapController center={center} zoom={13} />
           
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

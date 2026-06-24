@@ -39,7 +39,6 @@ const userProfileSchema = new mongoose.Schema({
   lastDevice:  { type: String, default: null },
   crops:       { type: Array,  default: [] },   // [{ id, name, dateGrown }]
   fertilizers: { type: Array,  default: [] },   // [{ id, name, amount, unit }]
-  soilScans:   { type: Array,  default: [] },   // [{ id, lat, lng, soilHealth, n, p, k, moisture, temp, timestamp }]
   updatedAt:   { type: Date,   default: Date.now }
 });
 
