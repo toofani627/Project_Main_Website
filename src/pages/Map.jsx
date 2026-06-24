@@ -115,6 +115,10 @@ const MapPage = () => {
     ? [scans[scans.length - 1].lat, scans[scans.length - 1].lng] 
     : [22.0, 78.0];
 
+  const averageHealth = scans.length > 0 
+    ? Math.round(scans.reduce((sum, scan) => sum + scan.soilHealth, 0) / scans.length) 
+    : null;
+
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] bg-[#0a0a0a] overflow-hidden flex flex-col font-body">
       {/* Glassmorphism Header Overlay */}
@@ -189,7 +193,7 @@ const MapPage = () => {
             }}
             className="mt-4 w-full py-2 bg-neo-green-dark/20 hover:bg-neo-green-dark/40 border border-neo-green-dark/50 rounded-xl text-neo-green-light text-xs font-mono tracking-widest transition-colors pointer-events-auto"
           >
-            Generate IIIT Delhi Demo
+            Display IIITD Map
           </button>
         ) : (
           <div className="mt-4 p-3 border border-red-500/50 rounded-xl bg-red-500/10 text-red-400 text-xs pointer-events-auto">
@@ -197,6 +201,21 @@ const MapPage = () => {
           </div>
         )}
       </div>
+
+      {/* Overall Health Display */}
+      {averageHealth !== null && (
+        <div className="absolute bottom-6 right-6 sm:bottom-10 sm:right-10 z-[1000] pointer-events-none text-right flex flex-col items-end drop-shadow-2xl">
+          <div className="text-white/90 font-mono tracking-[0.2em] text-xs sm:text-sm uppercase mb-1 drop-shadow-md">
+            Overall Health
+          </div>
+          <div 
+            className="font-heading text-6xl sm:text-8xl font-bold leading-none drop-shadow-lg"
+            style={{ color: getHealthColor(averageHealth), textShadow: `0 0 40px ${getHealthColor(averageHealth)}60` }}
+          >
+            {averageHealth}
+          </div>
+        </div>
+      )}
 
       {/* 2D Leaflet Map */}
       <div className="w-full flex-1 relative z-0">
@@ -206,7 +225,7 @@ const MapPage = () => {
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
         >
-          <ZoomControl position="bottomright" />
+          <ZoomControl position="bottomleft" />
           <MapController center={center} zoom={userLocation ? 10 : 4} />
           
           <TileLayer
